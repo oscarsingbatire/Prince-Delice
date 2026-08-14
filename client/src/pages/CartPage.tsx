@@ -65,14 +65,15 @@ export default function CartPage() {
   return (
     <div className="min-h-screen bg-[#FDFBF7] text-[#2C221E] flex flex-col font-sans">
       {/* Top Navbar */}
-      <header className="border-b border-[#EADBC8] bg-white/80 backdrop-blur sticky top-0 z-50 px-6 py-4 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2 font-serif text-2xl font-bold tracking-tight text-[#1E3F20]">
-          <span>🍊</span> Fruits Centrafrique
+      <header className="border-b border-[#EADBC8] bg-white/95 backdrop-blur sticky top-0 z-50 px-3 md:px-6 py-3 flex items-center justify-between gap-2">
+        <Link href="/" className="flex items-center gap-2 font-serif text-lg md:text-2xl font-bold tracking-tight text-[#1E3F20] min-w-0">
+          <img src="/manus-storage/Screenshot_20260813-194645_c6926745.png" alt="Prince Délice" className="w-9 h-9 md:w-11 md:h-11 rounded-full object-cover border border-[#D97706] shadow-sm flex-shrink-0" />
+          <span className="truncate">Prince Délice</span>
         </Link>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2">
           <Link href="/">
-            <Button variant="ghost" className="gap-2 text-[#1E3F20]">
-              <ArrowLeft className="w-4 h-4" /> Continuer mes achats
+            <Button variant="ghost" className="gap-1.5 text-[#1E3F20] text-xs md:text-sm px-2">
+              <ArrowLeft className="w-4 h-4" /> <span className="hidden sm:inline">Continuer mes achats</span>
             </Button>
           </Link>
         </div>
@@ -105,27 +106,39 @@ export default function CartPage() {
             <div className="lg:col-span-2 space-y-4">
               {cart.map((item) => (
                 <Card key={item.id} className="border-[#EADBC8] bg-white overflow-hidden shadow-sm">
-                  <CardContent className="p-4 flex items-center gap-4">
-                    <img src={item.imageUrl} alt={item.name} className="w-20 h-20 object-cover rounded-lg border border-[#EADBC8]" />
-                    <div className="flex-1">
-                      <h3 className="font-serif font-bold text-[#1E3F20]">{item.name}</h3>
-                      <p className="text-sm text-[#D97706] font-medium">{item.price.toLocaleString()} XAF / {item.unit}</p>
-                      <div className="flex items-center gap-3 mt-3">
-                        <div className="flex items-center border border-[#EADBC8] rounded-md">
-                          <button onClick={() => updateQty(item.id, -1)} className="px-2.5 py-1 text-muted-foreground hover:bg-[#FDFBF7]">
-                            <Minus className="w-3.5 h-3.5" />
-                          </button>
-                          <span className="px-3 text-sm font-semibold">{item.quantity}</span>
-                          <button onClick={() => updateQty(item.id, 1)} className="px-2.5 py-1 text-muted-foreground hover:bg-[#FDFBF7]">
-                            <Plus className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                        <button onClick={() => removeItem(item.id)} className="text-red-500 hover:text-red-700 p-1">
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                  <CardContent className="p-3 md:p-4 flex flex-col sm:flex-row items-start sm:items-center gap-3 md:gap-4">
+                    <div className="flex items-center gap-3 w-full sm:w-auto">
+                      <img src={item.imageUrl} alt={item.name} className="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-lg border border-[#EADBC8] flex-shrink-0" />
+                      <div className="flex-1 sm:hidden">
+                        <h3 className="font-serif font-bold text-sm text-[#1E3F20] leading-tight">{item.name}</h3>
+                        <p className="text-xs text-[#D97706] font-medium mt-0.5">{item.price.toLocaleString()} XAF / {item.unit}</p>
+                      </div>
+                      <div className="text-right font-serif font-bold text-base text-[#1E3F20] sm:hidden ml-auto">
+                        {(item.price * item.quantity).toLocaleString()} XAF
                       </div>
                     </div>
-                    <div className="text-right font-serif font-bold text-lg text-[#1E3F20]">
+
+                    <div className="hidden sm:block flex-1">
+                      <h3 className="font-serif font-bold text-[#1E3F20]">{item.name}</h3>
+                      <p className="text-sm text-[#D97706] font-medium">{item.price.toLocaleString()} XAF / {item.unit}</p>
+                    </div>
+
+                    <div className="flex items-center justify-between w-full sm:w-auto gap-4 mt-2 sm:mt-0 pt-2 sm:pt-0 border-t sm:border-0 border-[#EADBC8]">
+                      <div className="flex items-center border border-[#EADBC8] rounded-md">
+                        <button onClick={() => updateQty(item.id, -1)} className="px-2 py-1 text-muted-foreground hover:bg-[#FDFBF7]">
+                          <Minus className="w-3.5 h-3.5" />
+                        </button>
+                        <span className="px-2.5 text-sm font-semibold">{item.quantity}</span>
+                        <button onClick={() => updateQty(item.id, 1)} className="px-2 py-1 text-muted-foreground hover:bg-[#FDFBF7]">
+                          <Plus className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                      <button onClick={() => removeItem(item.id)} className="text-red-500 hover:text-red-700 p-1 flex items-center gap-1 text-xs sm:text-sm">
+                        <Trash2 className="w-4 h-4" /> <span className="sm:hidden">Supprimer</span>
+                      </button>
+                    </div>
+
+                    <div className="hidden sm:block text-right font-serif font-bold text-lg text-[#1E3F20]">
                       {(item.price * item.quantity).toLocaleString()} XAF
                     </div>
                   </CardContent>
