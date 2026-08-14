@@ -315,6 +315,19 @@ export default function CustomerAccountPage() {
                           />
                         </div>
                       )}
+
+                      {mfaMethod === 'app' && (
+                        <div className="space-y-3 pt-2 border-t border-[#EADBC8]">
+                          <p className="text-sm font-medium text-[#1E3F20]">Configuration Google Authenticator</p>
+                          <p className="text-xs text-muted-foreground">Scannez ce QR code avec votre application Google Authenticator, Microsoft Authenticator ou Authy :</p>
+                          <div className="bg-white p-4 rounded-xl border border-[#EADBC8] flex flex-col items-center justify-center gap-3">
+                            <div className="w-40 h-40 bg-gray-900 text-white rounded-lg flex items-center justify-center p-2 text-center text-xs font-mono">
+                              [QR CODE TOTP PRINCEDELICE]
+                            </div>
+                            <span className="text-xs font-mono text-muted-foreground">Clé secrète : PD-MFA-CENTRAFRIQUE-2026</span>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
 

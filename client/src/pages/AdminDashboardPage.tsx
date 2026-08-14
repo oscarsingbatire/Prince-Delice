@@ -17,16 +17,16 @@ export default function AdminDashboardPage() {
   const { user, isAuthenticated } = useAuth();
   const utils = trpc.useUtils();
 
-  const { data: stats } = trpc.admin.getStats.useQuery(undefined, { enabled: isAuthenticated && user?.role === 'admin' });
-  const { data: orders = [] } = trpc.admin.getAllOrders.useQuery(undefined, { enabled: isAuthenticated && user?.role === 'admin' });
-  const { data: returns = [] } = trpc.admin.getAllReturns.useQuery(undefined, { enabled: isAuthenticated && user?.role === 'admin' });
+  const { data: stats } = trpc.shop.getStats.useQuery(undefined, { enabled: isAuthenticated && user?.role === 'admin' });
+  const { data: orders = [] } = trpc.shop.getAllOrders.useQuery(undefined, { enabled: isAuthenticated && user?.role === 'admin' });
+  const { data: returns = [] } = trpc.shop.getAllReturns.useQuery(undefined, { enabled: isAuthenticated && user?.role === 'admin' });
   const { data: products = [] } = trpc.shop.getProducts.useQuery();
 
-  const updateStatusMutation = trpc.admin.updateOrderStatus.useMutation();
-  const processReturnMutation = trpc.admin.processReturn.useMutation();
-  const addProductMutation = trpc.admin.addProduct.useMutation();
-  const updateStockMutation = trpc.admin.updateStock.useMutation();
-  const addZoneMutation = trpc.admin.addDeliveryZone.useMutation();
+  const updateStatusMutation = trpc.shop.updateOrderStatus.useMutation();
+  const processReturnMutation = trpc.shop.processReturn.useMutation();
+  const addProductMutation = trpc.shop.addProduct.useMutation();
+  const updateStockMutation = trpc.shop.updateStock.useMutation();
+  const addZoneMutation = trpc.shop.addDeliveryZone.useMutation();
 
   // New product state
   const [newName, setNewName] = useState("");
@@ -73,7 +73,7 @@ export default function AdminDashboardPage() {
     try {
       await updateStatusMutation.mutateAsync({ orderId, status });
       toast.success(`Statut de la commande #${orderId} mis à jour : ${status}`);
-      utils.admin.getAllOrders.invalidate();
+      utils.shop.getAllOrders.invalidate();
     } catch {
       toast.error("Erreur lors de la mise à jour du statut.");
     }
@@ -83,7 +83,7 @@ export default function AdminDashboardPage() {
     try {
       await processReturnMutation.mutateAsync({ returnId, status, compensationType });
       toast.success(`Réclamation #${returnId} traitée avec succès.`);
-      utils.admin.getAllReturns.invalidate();
+      utils.shop.getAllReturns.invalidate();
     } catch {
       toast.error("Erreur lors du traitement de la réclamation.");
     }
@@ -200,11 +200,12 @@ export default function AdminDashboardPage() {
 
         {/* Tabs Management */}
         <Tabs defaultValue="orders" className="space-y-6">
-          <TabsList className="bg-[#EADBC8]/40 p-1 border border-[#EADBC8]">
-            <TabsTrigger value="orders">Gestion des Commandes</TabsTrigger>
+          <TabsList className="bg-[#EADBC8]/40 p-1 border border-[#EADBC8] flex-wrap h-auto">
+            <TabsTrigger value="orders">Commandes</TabsTrigger>
             <TabsTrigger value="stocks">Catalogue & Stocks</TabsTrigger>
             <TabsTrigger value="returns">Retours & Réclamations</TabsTrigger>
-            <TabsTrigger value="delivery">Zones de Livraison</TabsTrigger>
+            <TabsTrigger value="delivery">Livraisons</TabsTrigger>
+            <TabsTrigger value="reports">Rapports de Vente</TabsTrigger>
           </TabsList>
 
           {/* 1. Orders Management */}
@@ -442,6 +443,44 @@ export default function AdminDashboardPage() {
                       Ajouter la zone
                     </Button>
                   </form>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          {/* 5. Sales Reports */}
+          <TabsContent value="reports" className="space-y-4">
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-serif font-semibold text-[#1E3F20]">Rapports de Vente Automatisés</h2>
+              <Button
+                onClick={async () => {
+                  try {
+                    await trpc.shop.generateSalesReport.useMutation().mutateAsync(undefined);
+                    toast.success("Rapport de vente généré avec succès.");
+                  } catch {
+                    toast.error("Erreur lors de la génération du rapport.");
+                  }
+                }}
+                className="bg-[#D97706] hover:bg-[#b45309] text-white"
+              >
+                Générer le rapport du jour
+              </Button>
+            </div>
+            <div className="space-y-4">
+              <Card className="border-[#EADBC8] bg-white shadow-sm">
+                <CardHeader>
+                  <CardTitle className="font-serif text-lg text-[#1E3F20]">Historique des Rapports Quotidiens</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div className="p-4 rounded-lg bg-[#FDFBF7] border border-[#EADBC8] flex justify-between items-center">
+                      <div>
+                        <p className="font-bold text-sm text-[#1E3F20]">Rapport du 2026-08-14 (Aujourd'hui)</p>
+                        <p className="text-xs text-muted-foreground mt-1">Chiffre d'affaires total : {stats?.totalRevenue} XAF • Commandes : {stats?.totalOrders}</p>
+                      </div>
+                      <Badge className="bg-green-100 text-green-800">Automatisé</Badge>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             </div>

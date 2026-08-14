@@ -88,3 +88,25 @@ export type DeliveryZone = typeof deliveryZones.$inferSelect;
 export type Order = typeof orders.$inferSelect;
 export type OrderItem = typeof orderItems.$inferSelect;
 export type ReturnRecord = typeof returns.$inferSelect;
+
+export const reviews = mysqlTable("reviews", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  userName: varchar("userName", { length: 255 }).notNull(),
+  productId: int("productId"),
+  rating: int("rating").notNull(), // 1 to 5
+  comment: text("comment").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export const salesReports = mysqlTable("salesReports", {
+  id: int("id").autoincrement().primaryKey(),
+  reportDate: varchar("reportDate", { length: 50 }).notNull(), // YYYY-MM-DD
+  totalOrders: int("totalOrders").notNull(),
+  totalRevenue: decimal("totalRevenue", { precision: 12, scale: 2 }).notNull(),
+  summary: text("summary").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type Review = typeof reviews.$inferSelect;
+export type SalesReport = typeof salesReports.$inferSelect;

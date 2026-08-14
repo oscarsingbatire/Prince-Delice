@@ -4,8 +4,8 @@ import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { products, deliveryZones, orders, orderItems, returns, users } from "../drizzle/schema";
-import { eq, desc, sql } from "drizzle-orm";
+import { products, deliveryZones, orders, orderItems, returns, users, reviews, salesReports } from "../drizzle/schema";
+import { eq, desc } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 
 // Helper admin check
@@ -34,24 +34,41 @@ export const appRouter = router({
       .mutation(async ({ ctx, input }) => {
         const db = await getDb();
         if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
+        
+        let mfaSecret = ctx.user.mfaSecret;
+        if (input.mfaEnabled && !mfaSecret) {
+          mfaSecret = Array.from({ length: 16 }, () => Math.random().toString(36)[2]).join('').toUpperCase();
+        }
+
         await db.update(users)
           .set({
             mfaEnabled: input.mfaEnabled,
             mfaMethod: input.mfaMethod,
-            phone: input.phone || null,
-            mfaSecret: input.mfaEnabled ? 'CENTRAFRIQUE_MFA_SECURE_' + Math.random().toString(36).substring(7) : null
+            phone: input.phone !== undefined ? input.phone : ctx.user.phone,
+            mfaSecret: mfaSecret,
           })
           .where(eq(users.id, ctx.user.id));
-        return { success: true };
+        return { success: true, mfaSecret };
       }),
   }),
 
   shop: router({
+    getProducts: publicProcedure.query(async () => {
+      const db = await getDb();
+      if (!db) return [];
+      return await db.select().from(products);
+    }),
+
+    getDeliveryZones: publicProcedure.query(async () => {
+      const db = await getDb();
+      if (!db) return [];
+      return await db.select().from(deliveryZones);
+    }),
+
     seedInitialData: publicProcedure.mutation(async () => {
       const db = await getDb();
       if (!db) return { success: false };
 
-      // Check if products exist
       const existingProducts = await db.select().from(products).limit(1);
       if (existingProducts.length === 0) {
         await db.insert(products).values([
@@ -130,7 +147,6 @@ export const appRouter = router({
         ]);
       }
 
-      // Check delivery zones
       const existingZones = await db.select().from(deliveryZones).limit(1);
       if (existingZones.length === 0) {
         await db.insert(deliveryZones).values([
@@ -148,30 +164,11 @@ export const appRouter = router({
       return { success: true };
     }),
 
-    getProducts: publicProcedure.query(async () => {
-      const db = await getDb();
-      if (!db) return [];
-      return await db.select().from(products);
-    }),
-
-    getProductById: publicProcedure.input(z.object({ id: z.number() })).query(async ({ input }) => {
-      const db = await getDb();
-      if (!db) return null;
-      const res = await db.select().from(products).where(eq(products.id, input.id)).limit(1);
-      return res[0] || null;
-    }),
-
-    getDeliveryZones: publicProcedure.query(async () => {
-      const db = await getDb();
-      if (!db) return [];
-      return await db.select().from(deliveryZones);
-    }),
-
     createOrder: protectedProcedure
       .input(z.object({
         customerName: z.string().min(2),
-        customerPhone: z.string().min(8),
-        deliveryAddress: z.string().min(5),
+        customerPhone: z.string().min(6),
+        deliveryAddress: z.string().min(3),
         arrondissement: z.string(),
         neighborhood: z.string(),
         paymentMethod: z.enum(["orange_money", "visa_mastercard", "cash_on_delivery"]),
@@ -188,7 +185,6 @@ export const appRouter = router({
         const db = await getDb();
         if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
 
-        // Insert order
         const [orderResult] = await db.insert(orders).values({
           userId: ctx.user.id,
           customerName: input.customerName,
@@ -196,16 +192,15 @@ export const appRouter = router({
           deliveryAddress: input.deliveryAddress,
           arrondissement: input.arrondissement,
           neighborhood: input.neighborhood,
-          totalAmount: input.totalAmount,
-          deliveryFee: input.deliveryFee,
           paymentMethod: input.paymentMethod,
           paymentStatus: input.paymentMethod === 'cash_on_delivery' ? 'pending' : 'paid',
-          status: 'Validée',
+          deliveryFee: input.deliveryFee,
+          totalAmount: input.totalAmount,
+          status: "Validée",
         });
 
-        const orderId = Number(orderResult.insertId);
+        const orderId = (orderResult as any).insertId;
 
-        // Insert items and deduct stock
         for (const item of input.items) {
           await db.insert(orderItems).values({
             orderId,
@@ -215,12 +210,11 @@ export const appRouter = router({
             quantity: item.quantity,
           });
 
-          // Update product stock
-          await db.update(products)
-            .set({
-              stock: sql`GREATEST(0, stock - ${item.quantity})`
-            })
-            .where(eq(products.id, item.productId));
+          const [prod] = await db.select().from(products).where(eq(products.id, item.productId));
+          if (prod) {
+            const newStock = Math.max(0, prod.stock - item.quantity);
+            await db.update(products).set({ stock: newStock }).where(eq(products.id, item.productId));
+          }
         }
 
         return { success: true, orderId };
@@ -230,7 +224,6 @@ export const appRouter = router({
       const db = await getDb();
       if (!db) return [];
       const userOrders = await db.select().from(orders).where(eq(orders.userId, ctx.user.id)).orderBy(desc(orders.createdAt));
-      
       const result = [];
       for (const ord of userOrders) {
         const items = await db.select().from(orderItems).where(eq(orderItems.orderId, ord.id));
@@ -243,20 +236,18 @@ export const appRouter = router({
       .input(z.object({
         orderId: z.number(),
         reason: z.string().min(5),
-        photoUrl: z.string().url(),
+        photoUrl: z.string(),
       }))
       .mutation(async ({ ctx, input }) => {
         const db = await getDb();
         if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
-
         await db.insert(returns).values({
           orderId: input.orderId,
           userId: ctx.user.id,
           reason: input.reason,
           photoUrl: input.photoUrl,
-          status: 'En attente',
+          status: "En attente",
         });
-
         return { success: true };
       }),
 
@@ -265,9 +256,7 @@ export const appRouter = router({
       if (!db) return [];
       return await db.select().from(returns).where(eq(returns.userId, ctx.user.id)).orderBy(desc(returns.createdAt));
     }),
-  }),
 
-  admin: router({
     getStats: adminProcedure.query(async () => {
       const db = await getDb();
       if (!db) return { totalOrders: 0, totalRevenue: 0, lowStockCount: 0, totalProducts: 0 };
@@ -385,6 +374,73 @@ export const appRouter = router({
         await db.insert(deliveryZones).values(input);
         return { success: true };
       }),
+
+    getReviews: publicProcedure.query(async () => {
+      const db = await getDb();
+      if (!db) return [];
+      return await db.select().from(reviews).orderBy(desc(reviews.createdAt));
+    }),
+
+    addReview: protectedProcedure
+      .input(z.object({
+        productId: z.number().optional(),
+        rating: z.number().min(1).max(5),
+        comment: z.string().min(3),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
+        await db.insert(reviews).values({
+          userId: ctx.user.id,
+          userName: ctx.user.name || "Client Prince Délice",
+          productId: input.productId || null,
+          rating: input.rating,
+          comment: input.comment,
+        });
+        return { success: true };
+      }),
+
+    getSalesReports: adminProcedure.query(async () => {
+      const db = await getDb();
+      if (!db) return [];
+      const reports = await db.select().from(salesReports).orderBy(desc(salesReports.reportDate));
+      if (reports.length === 0) {
+        const today = new Date().toISOString().split("T")[0];
+        const allOrd = await db.select().from(orders);
+        const totalRev = allOrd.reduce((acc, o) => acc + Number(o.totalAmount), 0);
+        await db.insert(salesReports).values({
+          reportDate: today,
+          totalOrders: allOrd.length,
+          totalRevenue: totalRev.toString(),
+          summary: "Rapport automatisé des ventes généré avec succès pour Prince Délice.",
+        });
+        return await db.select().from(salesReports).orderBy(desc(salesReports.reportDate));
+      }
+      return reports;
+    }),
+
+    generateSalesReport: adminProcedure.mutation(async () => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
+      const today = new Date().toISOString().split("T")[0];
+      const allOrd = await db.select().from(orders);
+      const totalRev = allOrd.reduce((acc, o) => acc + Number(o.totalAmount), 0);
+      
+      const existing = await db.select().from(salesReports).where(eq(salesReports.reportDate, today));
+      if (existing.length > 0) {
+        await db.update(salesReports)
+          .set({ totalOrders: allOrd.length, totalRevenue: totalRev.toString(), summary: `Rapport mis à jour le ${today}. Chiffre d'affaires total : ${totalRev} XAF.` })
+          .where(eq(salesReports.reportDate, today));
+      } else {
+        await db.insert(salesReports).values({
+          reportDate: today,
+          totalOrders: allOrd.length,
+          totalRevenue: totalRev.toString(),
+          summary: `Rapport quotidien généré le ${today}. Ventes dynamiques à Bangui.`,
+        });
+      }
+      return { success: true };
+    }),
   }),
 });
 
