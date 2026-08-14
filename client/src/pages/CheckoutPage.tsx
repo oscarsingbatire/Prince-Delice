@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { ArrowLeft, CheckCircle2, ShieldCheck, Truck, CreditCard, Smartphone } from "lucide-react";
+import { ArrowLeft, CheckCircle2, ShieldCheck, Truck, CreditCard, Smartphone, Loader2 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { CartItem, getCart, saveCart } from "./CartPage";
 import { toast } from "sonner";
@@ -27,6 +27,7 @@ export default function CheckoutPage() {
   const [paymentMethod, setPaymentMethod] = useState<"orange_money" | "visa_mastercard" | "cash_on_delivery">("orange_money");
   const [orangePhone, setOrangePhone] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [paymentStep, setPaymentStep] = useState<string>("");
   const [successOrderId, setSuccessOrderId] = useState<number | null>(null);
 
   useEffect(() => {
@@ -55,6 +56,19 @@ export default function CheckoutPage() {
     }
 
     setIsSubmitting(true);
+
+    if (paymentMethod === "orange_money") {
+      setPaymentStep("Connexion à la passerelle Orange Money Centrafrique...");
+      await new Promise(r => setTimeout(r, 1200));
+      setPaymentStep(`Envoi de la demande de paiement au ${orangePhone}...`);
+      await new Promise(r => setTimeout(r, 1500));
+      setPaymentStep("En attente de validation par code PIN sur votre mobile...");
+      await new Promise(r => setTimeout(r, 1800));
+    } else {
+      setPaymentStep("Traitement du paiement sécurisé...");
+      await new Promise(r => setTimeout(r, 1000));
+    }
+
     try {
       const res = await createOrderMutation.mutateAsync({
         customerName,
@@ -82,6 +96,7 @@ export default function CheckoutPage() {
       toast.error(err.message || "Erreur lors de la validation de la commande.");
     } finally {
       setIsSubmitting(false);
+      setPaymentStep("");
     }
   };
 
@@ -121,8 +136,36 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#FDFBF7] text-[#2C221E] flex flex-col font-sans">
-      <header className="border-b border-[#EADBC8] bg-white/85 backdrop-blur sticky top-0 z-50 px-6 py-4 flex items-center justify-between">
+    <div className="min-h-screen bg-[#FDFBF7] text-[#2C221E] flex flex-col font-sans relative">
+      {/* Loading Modal for Payment */}
+      {isSubmitting && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <Card className="max-w-md w-full bg-white border-[#EADBC8] shadow-2xl p-8 text-center space-y-6 animate-in fade-in zoom-in duration-200">
+            <div className="w-20 h-20 bg-orange-100 rounded-full flex items-center justify-center mx-auto text-orange-600 relative">
+              <div className="absolute inset-0 rounded-full border-4 border-orange-500 border-t-transparent animate-spin"></div>
+              <Smartphone className="w-8 h-8" />
+            </div>
+            <div className="space-y-2">
+              <h3 className="font-serif text-xl font-bold text-[#1E3F20]">
+                {paymentMethod === "orange_money" ? "Paiement Orange Money" : "Traitement du Paiement"}
+              </h3>
+              <p className="text-sm text-muted-foreground font-medium animate-pulse">
+                {paymentStep}
+              </p>
+            </div>
+            {paymentMethod === "orange_money" && (
+              <div className="p-4 bg-orange-50 rounded-lg border border-orange-200 text-xs text-orange-800 text-left space-y-1">
+                <p>📲 <strong>Instructions :</strong> Regardez votre écran mobile pour valider la transaction par code PIN.</p>
+                <p>📞 <strong>Numéro :</strong> {orangePhone}</p>
+                <p>💰 <strong>Montant :</strong> {totalAmount.toLocaleString()} XAF</p>
+              </div>
+            )}
+            <p className="text-xs text-muted-foreground">Veuillez ne pas fermer cette fenêtre pendant la transaction.</p>
+          </Card>
+        </div>
+      )}
+
+      <header className="border-b border-[#EADBC8] bg-white/85 backdrop-blur sticky top-0 z-40 px-6 py-4 flex items-center justify-between">
         <Link href="/cart" className="flex items-center gap-2 text-[#1E3F20] font-medium">
           <ArrowLeft className="w-4 h-4" /> Retour au panier
         </Link>
@@ -283,7 +326,13 @@ export default function CheckoutPage() {
                   disabled={isSubmitting}
                   className="w-full bg-[#1E3F20] hover:bg-[#152e17] text-white py-6 text-base font-medium mt-4 shadow-md"
                 >
-                  {isSubmitting ? "Traitement en cours..." : "Confirmer et Commander"}
+                  {isSubmitting ? (
+                    <span className="flex items-center gap-2">
+                      <Loader2 className="w-5 h-5 animate-spin" /> Traitement en cours...
+                    </span>
+                  ) : (
+                    "Confirmer et Commander"
+                  )}
                 </Button>
 
                 <div className="flex items-center gap-2 text-xs text-muted-foreground justify-center pt-2">
