@@ -69,80 +69,119 @@ export const appRouter = router({
       const db = await getDb();
       if (!db) return { success: false };
 
-      const existingProducts = await db.select().from(products).limit(1);
-      if (existingProducts.length === 0) {
+      // Re-seed or update with new products including user's specific images and prices (100 to 500 XAF)
+      const existingProducts = await db.select().from(products);
+      if (existingProducts.length < 9) {
+        // Clear or insert new batch
+        await db.delete(products);
         await db.insert(products).values([
           {
-            name: "Mangues Kent de Bangui",
-            category: "Mangues",
-            description: "Mangues Kent juteuses et sucrées récoltées à maturité optimale dans les vergers de la périphérie de Bangui.",
-            price: "100",
-            unit: "kg",
-            stock: 85,
+            name: "Pomme Rouge Croquante",
+            category: "Pommes",
+            description: "Pommes rouges juteuses et sucrées, fraîchement sélectionnées pour un dessert croquant et vitaminé.",
+            price: "200",
+            unit: "pièce",
+            stock: 90,
             lowStockThreshold: 15,
             freshnessStatus: "Fraîcheur optimale",
-            imageUrl: "https://images.unsplash.com/photo-1553279768-865429fa0078?auto=format&fit=crop&w=800&q=80",
+            imageUrl: "/manus-storage/Screenshot_20260813-083513_e2715bfe.png",
             featured: true
           },
           {
-            name: "Ananas Victoria de Bimbo",
-            category: "Ananas",
-            description: "Ananas sucrés et parfumés cultivés à Bimbo. Chair dorée et juteuse, riche en vitamines.",
+            name: "Fraises Fraîches et Parfumées",
+            category: "Baies",
+            description: "Fraises pulpeuses et délicatement sucrées, idéales pour agrémenter vos pâtisseries et desserts.",
             price: "500",
-            unit: "pièce",
-            stock: 40,
+            unit: "barquette",
+            stock: 35,
             lowStockThreshold: 10,
             freshnessStatus: "Arrivage du jour",
-            imageUrl: "https://images.unsplash.com/photo-1550258987-190a2d41a8ba?auto=format&fit=crop&w=800&q=80",
+            imageUrl: "/manus-storage/Screenshot_20260813-083434_e1324662.png",
             featured: true
           },
           {
-            name: "Bananes Douces Dessert",
-            category: "Bananes",
-            description: "Bananes de table bien fermes et naturellement sucrées, idéales pour vos desserts et encas.",
-            price: "100",
-            unit: "kg",
-            stock: 120,
-            lowStockThreshold: 20,
+            name: "Jacque Tropical de Centrafrique",
+            category: "Exotiques",
+            description: "Fruits du jacquier savoureux aux arômes tropicaux incomparables, riches en énergie et en nutriments.",
+            price: "300",
+            unit: "portion",
+            stock: 25,
+            lowStockThreshold: 5,
             freshnessStatus: "Fraîcheur optimale",
-            imageUrl: "https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?auto=format&fit=crop&w=800&q=80",
+            imageUrl: "/manus-storage/Screenshot_20260813-083926_e9293cec.png",
             featured: true
           },
           {
-            name: "Papayes Géantes de Centrafrique",
+            name: "Avocat Fondant de Bangui",
+            category: "Avocats",
+            description: "Avocats onctueux à la chair généreuse, parfaits pour vos salades de fruits salées-sucrées ou en toast.",
+            price: "100",
+            unit: "pièce",
+            stock: 110,
+            lowStockThreshold: 20,
+            freshnessStatus: "Arrivage du jour",
+            imageUrl: "/manus-storage/Screenshot_20260813-083814_9b31eb0d.png",
+            featured: true
+          },
+          {
+            name: "Grains de Raisin Dorés et Noirs",
+            category: "Raisins",
+            description: "Grappes de raisin juteuses gorgées de sucre naturel, sélectionnées avec le plus grand soin.",
+            price: "400",
+            unit: "grappe",
+            stock: 50,
+            lowStockThreshold: 10,
+            freshnessStatus: "Fraîcheur optimale",
+            imageUrl: "/manus-storage/Screenshot_20260813-083319_78475f38.png",
+            featured: true
+          },
+          {
+            name: "Dattes Moelleuses & Sucrées",
+            category: "Secs & Moelleux",
+            description: "Dattes fondantes de première qualité, un concentré d'énergie naturelle pour vos en-cas.",
+            price: "500",
+            unit: "sachet",
+            stock: 65,
+            lowStockThreshold: 15,
+            freshnessStatus: "Fraîcheur optimale",
+            imageUrl: "/manus-storage/Screenshot_20260813-083710_f018aa15.png",
+            featured: false
+          },
+          {
+            name: "Papaye Géante Fondante",
             category: "Papayes",
             description: "Papayes charnues à la chair orangée fondante, gorgées de soleil et de saveurs tropicales.",
             price: "500",
             unit: "pièce",
-            stock: 8,
-            lowStockThreshold: 10,
-            freshnessStatus: "Dernières unités",
-            imageUrl: "https://images.unsplash.com/photo-1617112848923-cc227639f098?auto=format&fit=crop&w=800&q=80",
+            stock: 30,
+            lowStockThreshold: 8,
+            freshnessStatus: "Arrivage du jour",
+            imageUrl: "/manus-storage/Screenshot_20260813-084207_90967e9f.png",
             featured: true
           },
           {
-            name: "Agrumes & Mandarines Juteuses",
-            category: "Agrumes",
-            description: "Mandarines et oranges acidulées fraîchement cueillies pour le petit-déjeuner et les desserts vitaminés.",
-            price: "100",
-            unit: "kg",
-            stock: 60,
-            lowStockThreshold: 15,
+            name: "Noix de Coco Fraîche",
+            category: "Coco",
+            description: "Noix de coco fraîche avec eau désaltérante et chair blanche croquante. Un délice tropical.",
+            price: "300",
+            unit: "pièce",
+            stock: 45,
+            lowStockThreshold: 10,
             freshnessStatus: "Fraîcheur optimale",
-            imageUrl: "https://images.unsplash.com/photo-1611080626919-7cf5a9dbab5b?auto=format&fit=crop&w=800&q=80",
+            imageUrl: "/manus-storage/Screenshot_20260813-084128_e0a5008c.png",
             featured: false
           },
           {
-            name: "Pastèque Rafraîchissante",
+            name: "Pastèque Juteuse de Bangui",
             category: "Pastèques",
-            description: "Grosses pastèques désaltérantes, cultivées localement dans les plaines fertiles.",
+            description: "Tranches et morceaux de pastèque ultra-fraîche et désaltérante pour vos chaudes journées.",
             price: "100",
-            unit: "pièce",
-            stock: 25,
-            lowStockThreshold: 5,
+            unit: "tranche",
+            stock: 80,
+            lowStockThreshold: 20,
             freshnessStatus: "Arrivage du jour",
-            imageUrl: "https://images.unsplash.com/photo-1587049352847-4a222e784d38?auto=format&fit=crop&w=800&q=80",
-            featured: false
+            imageUrl: "/manus-storage/Screenshot_20260813-084100_ee75c831.png",
+            featured: true
           }
         ]);
       }
