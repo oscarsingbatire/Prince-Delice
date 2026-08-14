@@ -95,7 +95,7 @@ export const appRouter = router({
             name: "Papayes Géantes de Centrafrique",
             category: "Papayes",
             description: "Papayes charnues à la chair orangée fondante, gorgées de soleil et de saveurs tropicales.",
-            price: "100",
+            price: "500",
             unit: "pièce",
             stock: 8,
             lowStockThreshold: 10,

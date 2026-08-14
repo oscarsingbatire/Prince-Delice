@@ -81,24 +81,33 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-[#FDFBF7] text-[#2C221E] flex flex-col font-sans">
       {/* Top Navbar */}
-      <header className="border-b border-[#EADBC8] bg-white/90 backdrop-blur sticky top-0 z-50 px-6 py-4 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2 font-serif text-2xl font-bold tracking-tight text-[#1E3F20]">
-          <span className="text-3xl">🍊</span> Fruits Centrafrique
+      <header className="border-b border-[#EADBC8] bg-white/95 backdrop-blur sticky top-0 z-50 px-3 md:px-6 py-3 flex items-center justify-between gap-2">
+        <Link href="/" className="flex items-center gap-2 font-serif text-lg md:text-2xl font-bold tracking-tight text-[#1E3F20] min-w-0">
+          <img src="/manus-storage/Screenshot_20260813-194645_c6926745.png" alt="Prince Délice" className="w-9 h-9 md:w-11 md:h-11 rounded-full object-cover border border-[#D97706] shadow-sm flex-shrink-0" />
+          <span className="truncate">Prince Délice</span>
         </Link>
 
-        <div className="hidden md:flex items-center gap-6">
+        <div className="hidden lg:flex items-center gap-6">
           <Link href="/" className="text-sm font-medium hover:text-[#D97706] transition">Catalogue</Link>
           <a href="#engagement" className="text-sm font-medium hover:text-[#D97706] transition">Fraîcheur & Logistique</a>
           <a href="#retours" className="text-sm font-medium hover:text-[#D97706] transition">Retours & Sécurité</a>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 md:gap-3 flex-shrink-0">
+          {isAuthenticated && user?.role === 'admin' && (
+            <Link href="/admin">
+              <Button className="bg-[#D97706] hover:bg-[#b45309] text-white text-xs px-2.5 py-1.5 h-9 font-semibold shadow-sm flex items-center gap-1">
+                <span>Admin</span>
+              </Button>
+            </Link>
+          )}
+
           <Link href="/cart">
-            <Button variant="outline" className="border-[#EADBC8] bg-[#FDFBF7] hover:bg-[#FEF3C7] relative text-[#1E3F20] gap-2">
+            <Button variant="outline" className="border-[#EADBC8] bg-[#FDFBF7] hover:bg-[#FEF3C7] relative text-[#1E3F20] px-2.5 h-9">
               <ShoppingBag className="w-4 h-4 text-[#D97706]" />
-              <span className="hidden sm:inline">Panier</span>
+              <span className="hidden sm:inline ml-1.5">Panier</span>
               {cartCount > 0 && (
-                <span className="absolute -top-2 -right-2 bg-[#D97706] text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold">
+                <span className="absolute -top-1.5 -right-1.5 bg-[#D97706] text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold">
                   {cartCount}
                 </span>
               )}
@@ -106,23 +115,14 @@ export default function Home() {
           </Link>
 
           {isAuthenticated ? (
-            <div className="flex items-center gap-2">
-              <Link href="/account">
-                <Button variant="ghost" className="gap-2 text-[#1E3F20] font-medium">
-                  <User className="w-4 h-4" /> {user?.name?.split(" ")[0]}
-                </Button>
-              </Link>
-              {user?.role === 'admin' && (
-                <Link href="/admin">
-                  <Button className="bg-[#D97706] hover:bg-[#b45309] text-white text-xs">
-                    Admin
-                  </Button>
-                </Link>
-              )}
-            </div>
+            <Link href="/account">
+              <Button variant="ghost" className="gap-1 text-[#1E3F20] font-medium text-xs px-2 h-9">
+                <User className="w-4 h-4" /> <span className="hidden sm:inline">{user?.name?.split(" ")[0]}</span>
+              </Button>
+            </Link>
           ) : (
-            <Button onClick={() => startLogin()} className="bg-[#1E3F20] hover:bg-[#152e17] text-white text-sm">
-              Connexion / Inscription
+            <Button onClick={() => startLogin()} className="bg-[#1E3F20] hover:bg-[#152e17] text-white text-xs px-3 h-9">
+              Connexion
             </Button>
           )}
         </div>
@@ -296,11 +296,11 @@ export default function Home() {
       <footer className="bg-[#1E3F20] text-[#FDFBF7] py-12 px-6">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="space-y-2 text-center md:text-left">
-            <h2 className="font-serif text-2xl font-bold">Fruits Centrafrique</h2>
+            <h2 className="font-serif text-2xl font-bold">Prince Délice</h2>
             <p className="text-sm text-gray-300">La référence e-commerce des fruits de dessert frais à Bangui.</p>
           </div>
           <div className="text-xs text-gray-400 text-center md:text-right">
-            <p>© 2026 Fruits Centrafrique. Tous droits réservés.</p>
+            <p>© 2026 Prince Délice. Tous droits réservés.</p>
             <p className="mt-1">Sécurisé par HTTPS, MFA et Paiements Orange Money & Cartes Bancaires.</p>
           </div>
         </div>
