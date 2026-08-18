@@ -318,14 +318,34 @@ export default function CustomerAccountPage() {
                       )}
 
                       {mfaMethod === 'app' && (
-                        <div className="space-y-3 pt-2 border-t border-[#EADBC8]">
-                          <p className="text-sm font-medium text-[#1E3F20]">Configuration Google Authenticator</p>
-                          <p className="text-xs text-muted-foreground">Scannez ce QR code avec votre application Google Authenticator, Microsoft Authenticator ou Authy :</p>
-                          <div className="bg-white p-4 rounded-xl border border-[#EADBC8] flex flex-col items-center justify-center gap-3">
-                            <div className="w-40 h-40 bg-gray-900 text-white rounded-lg flex items-center justify-center p-2 text-center text-xs font-mono">
-                              [QR CODE TOTP PRINCEDELICE]
+                        <div className="space-y-4 pt-4 border-t border-[#EADBC8]">
+                          <div className="flex items-center justify-between">
+                            <h4 className="text-sm font-serif font-bold text-[#1E3F20]">Référentiel Technique & Configuration Google Authenticator</h4>
+                            <Badge className="bg-[#1E3F20] text-white">TOTP v1.0</Badge>
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            Le référentiel d'authentification à double facteur (2FA/MFA) repose sur le protocole standard TOTP (Time-based One-Time Password RFC 6238). Scannez le QR code ci-dessous avec Google Authenticator, Microsoft Authenticator ou Authy.
+                          </p>
+                          <div className="bg-[#FDFBF7] p-4 rounded-xl border border-[#EADBC8] grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+                            <div className="bg-white p-4 rounded-lg border border-[#EADBC8] flex flex-col items-center justify-center gap-2 shadow-sm">
+                              <div className="w-36 h-36 bg-[#1E3F20] text-white rounded-lg flex flex-col items-center justify-center p-2 text-center text-[10px] font-mono leading-tight">
+                                <span className="text-lg mb-1">🔐</span>
+                                <span>PRINCE DELICE AUTH</span>
+                                <span className="text-amber-400 font-bold mt-1">OTP 6 CHIFFRES</span>
+                              </div>
+                              <span className="text-[11px] font-mono text-[#1E3F20] font-semibold">Algorithme: HMAC-SHA1 / 30s</span>
                             </div>
-                            <span className="text-xs font-mono text-muted-foreground">Clé secrète : PD-MFA-CENTRAFRIQUE-2026</span>
+                            <div className="space-y-2 text-xs">
+                              <div className="p-2.5 bg-white rounded border border-[#EADBC8]">
+                                <span className="font-semibold text-[#1E3F20] block mb-1">Clé Secrète de Référence (Repository) :</span>
+                                <code className="bg-gray-100 text-gray-800 px-2 py-1 rounded font-mono text-[11px] select-all">
+                                  JBSWY3DPEHPK3PXP
+                                </code>
+                              </div>
+                              <p className="text-muted-foreground text-[11px]">
+                                En cas de perte de votre smartphone, utilisez votre code de secours administrateur ou contactez le support technique Prince Délice Bangui.
+                              </p>
+                            </div>
                           </div>
                         </div>
                       )}
