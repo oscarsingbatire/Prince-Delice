@@ -117,13 +117,14 @@ export default function CustomerAccountPage() {
 
   return (
     <div className="min-h-screen bg-[#FDFBF7] text-[#2C221E] flex flex-col font-sans">
-      <header className="border-b border-[#EADBC8] bg-white/85 backdrop-blur sticky top-0 z-50 px-6 py-4 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2 font-serif text-2xl font-bold text-[#1E3F20]">
-          <span>🍊</span> Fruits Centrafrique
+      <header className="border-b border-[#EADBC8] bg-white/95 backdrop-blur sticky top-0 z-50 px-3 md:px-6 py-3 flex items-center justify-between gap-2">
+        <Link href="/" className="flex items-center gap-2 font-serif text-lg md:text-2xl font-bold tracking-tight text-[#1E3F20] min-w-0">
+          <img src="/manus-storage/Screenshot_20260813-194645_c6926745.png" alt="Prince Délice" className="w-9 h-9 md:w-11 md:h-11 rounded-full object-cover border border-[#D97706] shadow-sm flex-shrink-0" />
+          <span className="truncate">Prince Délice</span>
         </Link>
-        <div className="flex items-center gap-4">
-          <span className="text-sm font-medium">Bonjour, {user?.name}</span>
-          <Button variant="outline" onClick={() => logout()} className="border-[#EADBC8] text-[#1E3F20]">
+        <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
+          <span className="text-xs sm:text-sm font-medium truncate max-w-[120px] sm:max-w-none">Bonjour, {user?.name}</span>
+          <Button variant="outline" onClick={() => logout()} className="border-[#EADBC8] text-[#1E3F20] text-xs h-8 px-2 sm:px-3 sm:h-9">
             Déconnexion
           </Button>
         </div>
