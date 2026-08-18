@@ -1,0 +1,16 @@
+{
+  "name": "Prince Délice - Fruits Frais Centrafrique",
+  "short_name": "Prince Délice",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FDFBF7",
+  "theme_color": "#1E3F20",
+  "description": "Vente de fruits de dessert frais à Bangui - Paiement Orange Money et cartes bancaires",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    }
+  ]
+}
