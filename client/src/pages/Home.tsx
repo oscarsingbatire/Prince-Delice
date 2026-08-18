@@ -404,12 +404,19 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Floating WhatsApp Button */}
+      {/* Floating WhatsApp Button with universal schema */}
       <a
-        href="https://wa.me/23672898938?text=Bonjour%20Prince%20Délice,%20je%20souhaite%20commander%20des%20fruits%20frais."
+        href="https://api.whatsapp.com/send?phone=23672898938&text=Bonjour%20Prince%20D%C3%A9lice,%20je%20souhaite%20commander%20des%20fruits%20frais."
         target="_blank"
         rel="noopener noreferrer"
-        className="fixed bottom-6 right-6 z-50 bg-[#25D366] hover:bg-[#20ba5a] text-white p-4 rounded-full shadow-2xl flex items-center justify-center transition hover:scale-110"
+        onClick={(e) => {
+          // Fallback to direct wa.me if api.whatsapp.com is blocked
+          const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+          if (isMobile) {
+            window.location.href = "whatsapp://send?phone=23672898938&text=Bonjour%20Prince%20D%C3%A9lice,%20je%20souhaite%20commander%20des%20fruits%20frais.";
+          }
+        }}
+        className="fixed bottom-6 right-6 z-50 bg-[#25D366] hover:bg-[#20ba5a] text-white p-4 rounded-full shadow-2xl flex items-center justify-center transition hover:scale-110 cursor-pointer"
         title="Contactez-nous sur WhatsApp"
       >
         <svg className="w-7 h-7 fill-current" viewBox="0 0 24 24">

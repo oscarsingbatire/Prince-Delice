@@ -339,7 +339,7 @@ export default function CustomerAccountPage() {
                     onClick={() => {
                       toast.success("150 points convertis en un bon d'achat de 1 500 FCFA appliqué sur votre prochain panier !");
                     }}
-                    className="bg-[#1E3F20] hover:bg-[#152e17] text-white text-xs"
+                    className="bg-[#1E3F20] hover:bg-[#152e17] text-white text-xs whitespace-normal h-auto py-2.5 px-4 text-center"
                   >
                     Convertir 150 points en bon d'achat (1 500 FCFA)
                   </Button>
