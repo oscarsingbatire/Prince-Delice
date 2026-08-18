@@ -376,6 +376,34 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Newsletter Hebdomadaire Section */}
+      <section className="py-16 px-6 bg-[#1E3F20] text-white">
+        <div className="max-w-4xl mx-auto text-center space-y-6">
+          <Badge className="bg-[#D97706] text-white px-3 py-1 text-sm font-medium">Newsletter Bangui</Badge>
+          <h2 className="text-3xl font-serif font-bold">Recevez nos arrivages de fruits frais chaque semaine</h2>
+          <p className="text-gray-300 text-sm max-w-xl mx-auto">
+            Inscrivez-vous pour ne rien rater des récoltes de saison (mangues, ananas, papayes) et bénéficiez de codes promo exclusifs à Bangui.
+          </p>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              toast.success("Inscription à la newsletter validée avec succès ! Bienvenue chez Prince Délice.");
+            }}
+            className="flex flex-col sm:flex-row gap-2 max-w-md mx-auto"
+          >
+            <input
+              type="email"
+              required
+              placeholder="Votre adresse email..."
+              className="px-4 py-3 rounded-lg text-gray-900 text-sm flex-1 focus:outline-none"
+            />
+            <Button type="submit" className="bg-[#D97706] hover:bg-[#b45309] text-white font-semibold px-6">
+              S'inscrire
+            </Button>
+          </form>
+        </div>
+      </section>
+
       {/* Floating WhatsApp Button */}
       <a
         href="https://wa.me/23672898938?text=Bonjour%20Prince%20Délice,%20je%20souhaite%20commander%20des%20fruits%20frais."
