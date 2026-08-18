@@ -110,3 +110,22 @@ export const salesReports = mysqlTable("salesReports", {
 
 export type Review = typeof reviews.$inferSelect;
 export type SalesReport = typeof salesReports.$inferSelect;
+
+export const referrals = mysqlTable("referrals", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  code: varchar("code", { length: 50 }).notNull().unique(),
+  discountPercent: int("discountPercent").default(10).notNull(),
+  usesCount: int("usesCount").default(0).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export const pushSubscriptions = mysqlTable("pushSubscriptions", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  endpoint: text("endpoint").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type Referral = typeof referrals.$inferSelect;
+export type PushSubscription = typeof pushSubscriptions.$inferSelect;

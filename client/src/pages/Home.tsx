@@ -20,6 +20,22 @@ export default function Home() {
   const [cartCount, setCartCount] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Tous");
+  const [lang, setLang] = useState<"fr" | "sg">("fr");
+
+  const subscribePushMutation = trpc.shop.subscribePush.useMutation();
+
+  const handlePushSubscribe = async () => {
+    if (!isAuthenticated) {
+      toast.error(lang === "fr" ? "Veuillez vous connecter pour activer les notifications push." : "Fade yeke gba mawa ti lo na connection.");
+      return;
+    }
+    try {
+      await subscribePushMutation.mutateAsync({ endpoint: "push_device_" + Date.now() });
+      toast.success(lang === "fr" ? "Notifications push activées avec succès !" : "Notifications push ahinga nzoni na sango!");
+    } catch {
+      toast.error("Erreur lors de l'activation.");
+    }
+  };
 
   useEffect(() => {
     // Seed initial data if empty
@@ -88,9 +104,31 @@ export default function Home() {
         </Link>
 
         <div className="hidden lg:flex items-center gap-6">
-          <Link href="/" className="text-sm font-medium hover:text-[#D97706] transition">Catalogue</Link>
-          <a href="#engagement" className="text-sm font-medium hover:text-[#D97706] transition">Fraîcheur & Logistique</a>
-          <a href="#retours" className="text-sm font-medium hover:text-[#D97706] transition">Retours & Sécurité</a>
+          <Link href="/" className="text-sm font-medium hover:text-[#D97706] transition">{lang === "fr" ? "Catalogue" : "Mbeni"}</Link>
+          <a href="#engagement" className="text-sm font-medium hover:text-[#D97706] transition">{lang === "fr" ? "Fraîcheur & Logistique" : "Nzoni & Logistique"}</a>
+          <a href="#retours" className="text-sm font-medium hover:text-[#D97706] transition">{lang === "fr" ? "Retours & Sécurité" : "Zingo & Sécurité"}</a>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setLang(lang === "fr" ? "sg" : "fr")}
+            className="border-[#D97706] text-[#D97706] text-xs h-8 px-2 font-bold"
+            title="Changer de langue (Français / Sango)"
+          >
+            {lang === "fr" ? "🇫🇷 FR" : "🇨🇫 SGO"}
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handlePushSubscribe}
+            className="border-[#EADBC8] text-[#1E3F20] text-xs h-8 px-2 hidden sm:flex items-center gap-1"
+            title="Activer les notifications push"
+          >
+            🔔 Push
+          </Button>
         </div>
 
         <div className="flex items-center gap-2 md:gap-3 flex-shrink-0">

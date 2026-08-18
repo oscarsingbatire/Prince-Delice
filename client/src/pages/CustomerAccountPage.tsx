@@ -134,12 +134,15 @@ export default function CustomerAccountPage() {
         <h1 className="text-3xl font-serif font-bold text-[#1E3F20] mb-8">Mon Espace Client</h1>
 
         <Tabs defaultValue="orders" className="space-y-6">
-          <TabsList className="bg-[#EADBC8]/40 p-1.5 border border-[#EADBC8] grid grid-cols-1 sm:grid-cols-3 h-auto gap-1">
+          <TabsList className="bg-[#EADBC8]/40 p-1.5 border border-[#EADBC8] grid grid-cols-2 sm:grid-cols-4 h-auto gap-1">
             <TabsTrigger value="orders" className="data-[state=active]:bg-white data-[state=active]:text-[#1E3F20] py-2.5 text-xs sm:text-sm">
               Suivi de Commandes
             </TabsTrigger>
             <TabsTrigger value="returns" className="data-[state=active]:bg-white data-[state=active]:text-[#1E3F20] py-2.5 text-xs sm:text-sm">
               Retours & Réclamations (24h)
+            </TabsTrigger>
+            <TabsTrigger value="referral" className="data-[state=active]:bg-white data-[state=active]:text-[#1E3F20] py-2.5 text-xs sm:text-sm">
+              Parrainage & Fidélité
             </TabsTrigger>
             <TabsTrigger value="security" className="data-[state=active]:bg-white data-[state=active]:text-[#1E3F20] py-2.5 text-xs sm:text-sm">
               Sécurité & MFA
@@ -289,6 +292,56 @@ export default function CustomerAccountPage() {
                 ))}
               </div>
             )}
+          </TabsContent>
+
+          {/* Referral Tab */}
+          <TabsContent value="referral" className="space-y-6">
+            <Card className="border-[#EADBC8] shadow-sm">
+              <CardHeader>
+                <CardTitle className="font-serif text-[#1E3F20]">Programme de Parrainage Prince Délice</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="bg-[#FEF3C7]/40 p-5 rounded-xl border border-[#D97706]/30 flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div>
+                    <h3 className="font-serif font-bold text-lg text-[#1E3F20] mb-1">Invitez vos amis et gagnez des fruits frais !</h3>
+                    <p className="text-xs sm:text-sm text-muted-foreground">
+                      Partagez votre code de parrainage exclusif à Bangui. Votre filleul reçoit 500 FCFA de réduction sur sa première commande et vous gagnez 500 FCFA de crédit fidélité.
+                    </p>
+                  </div>
+                  <div className="bg-white p-4 rounded-lg border border-[#D97706] text-center shadow-sm min-w-[180px]">
+                    <span className="text-xs text-muted-foreground block mb-1">Votre Code Unique</span>
+                    <span className="font-mono font-bold text-lg text-[#D97706]">PRINCE-{user?.id ? user.id * 100 + 43 : 789}</span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="bg-white p-4 rounded-lg border border-[#EADBC8] text-center space-y-1">
+                    <span className="text-2xl font-bold text-[#1E3F20]">0</span>
+                    <p className="text-xs text-muted-foreground">Amis parrainés</p>
+                  </div>
+                  <div className="bg-white p-4 rounded-lg border border-[#EADBC8] text-center space-y-1">
+                    <span className="text-2xl font-bold text-[#D97706]">0 FCFA</span>
+                    <p className="text-xs text-muted-foreground">Bonus gagnés</p>
+                  </div>
+                  <div className="bg-white p-4 rounded-lg border border-[#EADBC8] text-center space-y-1">
+                    <span className="text-2xl font-bold text-green-700">Actif</span>
+                    <p className="text-xs text-muted-foreground">Statut du programme</p>
+                  </div>
+                </div>
+
+                <div className="pt-2">
+                  <Button
+                    onClick={() => {
+                      navigator.clipboard?.writeText(`PRINCE-${user?.id ? user.id * 100 + 43 : 789}`);
+                      toast.success("Code de parrainage copié dans le presse-papier !");
+                    }}
+                    className="w-full sm:w-auto bg-[#D97706] hover:bg-[#b45309] text-white"
+                  >
+                    Copier mon code de parrainage
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* 3. Sécurité & MFA */}

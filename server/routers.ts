@@ -4,7 +4,7 @@ import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { products, deliveryZones, orders, orderItems, returns, users, reviews, salesReports } from "../drizzle/schema";
+import { products, deliveryZones, orders, orderItems, returns, users, reviews, salesReports, referrals, pushSubscriptions } from "../drizzle/schema";
 import { eq, desc } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 
@@ -480,6 +480,47 @@ export const appRouter = router({
       }
       return { success: true };
     }),
+
+    getReferralCode: protectedProcedure.query(async ({ ctx }) => {
+      const db = await getDb();
+      if (!db) return null;
+      const res = await db.select().from(referrals).where(eq(referrals.userId, ctx.user.id)).limit(1);
+      if (res.length > 0) return res[0];
+      // Generate default code
+      const code = `PRINCE-${ctx.user.id}-${Math.floor(1000 + Math.random() * 9000)}`;
+      await db.insert(referrals).values({
+        userId: ctx.user.id,
+        code,
+        discountPercent: 10,
+        usesCount: 0,
+      });
+      const created = await db.select().from(referrals).where(eq(referrals.userId, ctx.user.id)).limit(1);
+      return created[0];
+    }),
+
+    applyReferralCode: publicProcedure
+      .input(z.object({ code: z.string() }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
+        const res = await db.select().from(referrals).where(eq(referrals.code, input.code.trim())).limit(1);
+        if (res.length === 0) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Code de parrainage invalide.' });
+        }
+        return { success: true, discountPercent: res[0].discountPercent, code: res[0].code };
+      }),
+
+    subscribePush: protectedProcedure
+      .input(z.object({ endpoint: z.string() }))
+      .mutation(async ({ ctx, input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
+        await db.insert(pushSubscriptions).values({
+          userId: ctx.user.id,
+          endpoint: input.endpoint,
+        });
+        return { success: true };
+      }),
   }),
 });
 
