@@ -134,14 +134,14 @@ export default function CustomerAccountPage() {
         <h1 className="text-3xl font-serif font-bold text-[#1E3F20] mb-8">Mon Espace Client</h1>
 
         <Tabs defaultValue="orders" className="space-y-6">
-          <TabsList className="bg-[#EADBC8]/40 p-1 border border-[#EADBC8]">
-            <TabsTrigger value="orders" className="data-[state=active]:bg-white data-[state=active]:text-[#1E3F20]">
+          <TabsList className="bg-[#EADBC8]/40 p-1.5 border border-[#EADBC8] grid grid-cols-1 sm:grid-cols-3 h-auto gap-1">
+            <TabsTrigger value="orders" className="data-[state=active]:bg-white data-[state=active]:text-[#1E3F20] py-2.5 text-xs sm:text-sm">
               Suivi de Commandes
             </TabsTrigger>
-            <TabsTrigger value="returns" className="data-[state=active]:bg-white data-[state=active]:text-[#1E3F20]">
+            <TabsTrigger value="returns" className="data-[state=active]:bg-white data-[state=active]:text-[#1E3F20] py-2.5 text-xs sm:text-sm">
               Retours & Réclamations (24h)
             </TabsTrigger>
-            <TabsTrigger value="security" className="data-[state=active]:bg-white data-[state=active]:text-[#1E3F20]">
+            <TabsTrigger value="security" className="data-[state=active]:bg-white data-[state=active]:text-[#1E3F20] py-2.5 text-xs sm:text-sm">
               Sécurité & MFA
             </TabsTrigger>
           </TabsList>
