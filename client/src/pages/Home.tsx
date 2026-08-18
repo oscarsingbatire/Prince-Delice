@@ -70,7 +70,7 @@ export default function Home() {
     toast.success(`${product.name} ajouté au panier avec succès !`);
   };
 
-  const categories = ["Tous", "Mangues", "Ananas", "Bananes", "Papayes", "Agrumes", "Pastèques"];
+  const categories = ["Tous", "Pommes", "Baies", "Exotiques", "Avocats", "Raisins", "Secs & Moelleux", "Papayes", "Coco", "Pastèques"];
 
   const filteredProducts = products.filter(p => {
     const matchesCategory = selectedCategory === "Tous" || p.category === selectedCategory;
@@ -233,22 +233,38 @@ export default function Home() {
                     </div>
                     <CardTitle className="font-serif text-xl text-[#1E3F20] mt-1">{product.name}</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-4 pb-4">
+                  <CardContent className="space-y-3 pb-4">
                     <p className="text-sm text-muted-foreground line-clamp-2">{product.description}</p>
-                    <div className="flex items-baseline justify-between pt-2">
+                    <div className="p-2.5 bg-[#FEF3C7]/40 rounded-lg border border-[#FDE68A] text-xs space-y-1">
+                      <span className="font-semibold text-[#1E3F20] flex items-center gap-1">
+                        <Sparkles className="w-3.5 h-3.5 text-[#D97706]" /> Bienfaits Santé :
+                      </span>
+                      <p className="text-[#2C221E] italic">
+                        {product.name.includes("Pomme") && "Riche en antioxydants, régule la glycémie et protège le système cardiovasculaire."}
+                        {product.name.includes("Fraise") && "Excellente source de vitamine C et de polyphénols, stimule l'immunité et l'éclat de la peau."}
+                        {product.name.includes("Jacque") && "Riche en magnésium et potassium, favorise la digestion et booste l'énergie naturelle."}
+                        {product.name.includes("Avocat") && "Apporte des bons acides gras essentiels (oméga-3), protège le cœur et nourrit l'organisme."}
+                        {product.name.includes("Raisin") && "Puissant détoxifiant, riche en resvératrol, favorise la circulation sanguine et la jeunesse cellulaire."}
+                        {product.name.includes("Dattes") && "Source naturelle de fer et de fibres, procure un regain d'énergie immédiat et durable."}
+                        {product.name.includes("Papaye") && "Contient de la papaïne, enzyme miracle pour la digestion et la santé de la peau."}
+                        {product.name.includes("Coco") && "Ultra-hydratante, riche en électrolytes naturels, idéale pour récupérer après l'effort."}
+                        {product.name.includes("Pastèque") && "Composée à 92% d'eau, hydratation optimale, riche en lycopène protecteur."}
+                      </p>
+                    </div>
+                    <div className="flex items-baseline justify-between pt-1">
                       <span className="font-serif text-2xl font-bold text-[#1E3F20]">
                         {Number(product.price).toLocaleString()} <span className="text-sm font-sans font-normal text-muted-foreground">XAF / {product.unit}</span>
                       </span>
                     </div>
                   </CardContent>
                 </div>
-                <div className="px-6 pb-6 pt-0">
+                <div className="px-6 pb-6 pt-0 space-y-2">
                   <Button
                     onClick={() => handleAddToCart(product)}
                     disabled={product.stock <= 0}
                     className="w-full bg-[#1E3F20] hover:bg-[#152e17] text-white gap-2"
                   >
-                    <ShoppingBag className="w-4 h-4" /> {product.stock > 0 ? "Ajouter au Panier" : "Rupture de Stock"}
+                    <ShoppingBag className="w-4 h-4" /> Ajouter au Panier
                   </Button>
                 </div>
               </Card>
@@ -324,7 +340,7 @@ export default function Home() {
 
       {/* Floating WhatsApp Button */}
       <a
-        href="https://wa.me/23675000000?text=Bonjour%20Prince%20Délice,%20je%20souhaite%20commander%20des%20fruits%20frais."
+        href="https://wa.me/23672898938?text=Bonjour%20Prince%20Délice,%20je%20souhaite%20commander%20des%20fruits%20frais."
         target="_blank"
         rel="noopener noreferrer"
         className="fixed bottom-6 right-6 z-50 bg-[#25D366] hover:bg-[#20ba5a] text-white p-4 rounded-full shadow-2xl flex items-center justify-center transition hover:scale-110"

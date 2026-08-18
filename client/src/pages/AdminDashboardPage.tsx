@@ -226,7 +226,7 @@ export default function AdminDashboardPage() {
                         value={ord.status}
                         onValueChange={(val: any) => handleUpdateOrderStatus(ord.id, val)}
                       >
-                        <SelectTrigger className="w-48">
+                        <SelectTrigger className="w-56 text-xs sm:text-sm font-medium">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -463,7 +463,7 @@ export default function AdminDashboardPage() {
                     toast.error("Erreur lors de la génération du rapport.");
                   }
                 }}
-                className="bg-[#D97706] hover:bg-[#b45309] text-white"
+                className="bg-[#D97706] hover:bg-[#b45309] text-white text-xs px-3 py-1.5 h-auto"
               >
                 Générer le rapport du jour
               </Button>

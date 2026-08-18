@@ -222,14 +222,36 @@ export default function CustomerAccountPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="photoUrl">URL de la photo justificative (obligatoire sous 24h)</Label>
+                    <Label htmlFor="photoUrl">Photo justificative du fruit (Défaut de fraîcheur sous 24h)</Label>
+                    <div className="grid grid-cols-3 gap-2 pb-2">
+                      {[
+                        { name: "Pomme", url: "https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?auto=format&fit=crop&w=400&q=80" },
+                        { name: "Fraise", url: "https://images.unsplash.com/photo-1464965911861-746a04b4bca6?auto=format&fit=crop&w=400&q=80" },
+                        { name: "Papaye", url: "https://images.unsplash.com/photo-1617093727343-374698b1b08d?auto=format&fit=crop&w=400&q=80" },
+                        { name: "Avocat", url: "https://images.unsplash.com/photo-1523049673857-eb18f1d7b578?auto=format&fit=crop&w=400&q=80" },
+                        { name: "Pastèque", url: "https://images.unsplash.com/photo-1587049352847-4a222e784d38?auto=format&fit=crop&w=400&q=80" },
+                        { name: "Autre fruit", url: "https://images.unsplash.com/photo-1610832958506-aa56368176cf?auto=format&fit=crop&w=400&q=80" },
+                      ].map(img => (
+                        <div
+                          key={img.name}
+                          onClick={() => setReturnPhotoUrl(img.url)}
+                          className={`cursor-pointer rounded-lg border p-1 text-center transition ${
+                            returnPhotoUrl === img.url ? "border-[#1E3F20] bg-[#FEF3C7]/40 ring-2 ring-[#1E3F20]" : "border-[#EADBC8] bg-white hover:bg-gray-50"
+                          }`}
+                        >
+                          <img src={img.url} alt={img.name} className="w-full h-16 object-cover rounded mb-1" />
+                          <span className="text-[10px] font-semibold text-[#1E3F20]">{img.name}</span>
+                        </div>
+                      ))}
+                    </div>
                     <Input
                       id="photoUrl"
                       value={returnPhotoUrl}
                       onChange={e => setReturnPhotoUrl(e.target.value)}
-                      placeholder="https://example.com/photo-fruit.jpg"
+                      placeholder="Ou saisissez l'URL de votre photo..."
+                      className="text-xs"
                     />
-                    <p className="text-xs text-muted-foreground">Conformément à notre politique, les réclamations pour produits périssables nécessitent une photo claire dans les 24h.</p>
+                    <p className="text-xs text-muted-foreground">Sélectionnez le fruit concerné ci-dessus ou indiquez le lien de votre photo justificative.</p>
                   </div>
 
                   <Button type="submit" disabled={isSubmittingReturn} className="bg-[#1E3F20] hover:bg-[#152e17] text-white">
@@ -352,9 +374,11 @@ export default function CustomerAccountPage() {
                     </div>
                   )}
 
-                  <Button type="submit" className="bg-[#1E3F20] hover:bg-[#152e17] text-white">
-                    Enregistrer les paramètres de sécurité
-                  </Button>
+                  <div className="pt-2">
+                    <Button type="submit" className="w-full sm:w-auto bg-[#1E3F20] hover:bg-[#152e17] text-white px-6 py-2.5">
+                      Enregistrer les paramètres de sécurité
+                    </Button>
+                  </div>
                 </form>
               </CardContent>
             </Card>
