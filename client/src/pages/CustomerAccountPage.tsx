@@ -22,6 +22,7 @@ export default function CustomerAccountPage() {
   const { data: returns = [] } = trpc.shop.getUserReturns.useQuery(undefined, { enabled: isAuthenticated });
   const updateMfaMutation = trpc.auth.updateMfa.useMutation();
   const submitReturnMutation = trpc.shop.submitReturn.useMutation();
+  const sendSmsOtpMutation = trpc.shop.sendSmsOtp.useMutation();
 
   const [mfaEnabled, setMfaEnabled] = useState(user?.mfaEnabled || false);
   const [mfaMethod, setMfaMethod] = useState<"sms" | "app">(user?.mfaMethod || "app");
@@ -396,14 +397,34 @@ export default function CustomerAccountPage() {
                       </div>
 
                       {mfaMethod === 'sms' && (
-                        <div className="space-y-2">
-                          <Label htmlFor="mfaPhone">Numéro de téléphone pour réception SMS</Label>
-                          <Input
-                            id="mfaPhone"
-                            value={phone}
-                            onChange={e => setPhone(e.target.value)}
-                            placeholder="+236 75 XX XX XX"
-                          />
+                        <div className="space-y-4 pt-2">
+                          <div className="space-y-2">
+                            <Label htmlFor="mfaPhone">Numéro de téléphone pour réception SMS (Bangui)</Label>
+                            <Input
+                              id="mfaPhone"
+                              value={phone}
+                              onChange={e => setPhone(e.target.value)}
+                              placeholder="+236 75 XX XX XX"
+                            />
+                          </div>
+                          <Button
+                            type="button"
+                            onClick={async () => {
+                              if (!phone) {
+                                toast.error("Veuillez saisir un numéro de téléphone.");
+                                return;
+                              }
+                              try {
+                                const res = await sendSmsOtpMutation.mutateAsync({ phone });
+                                toast.success(`Code OTP simulé envoyé par SMS : ${res.otpCode}`);
+                              } catch {
+                                toast.error("Erreur lors de l'envoi du SMS OTP.");
+                              }
+                            }}
+                            className="bg-[#D97706] hover:bg-[#b45309] text-white text-xs h-9"
+                          >
+                            Tester la passerelle SMS & Recevoir un code OTP
+                          </Button>
                         </div>
                       )}
 

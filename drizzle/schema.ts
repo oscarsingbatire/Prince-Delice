@@ -129,3 +129,24 @@ export const pushSubscriptions = mysqlTable("pushSubscriptions", {
 
 export type Referral = typeof referrals.$inferSelect;
 export type PushSubscription = typeof pushSubscriptions.$inferSelect;
+
+export const userLoyalty = mysqlTable("userLoyalty", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().unique(),
+  points: int("points").default(150).notNull(),
+  tier: varchar("tier", { length: 50 }).default("VIP Or").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export const smsGatewayLogs = mysqlTable("smsGatewayLogs", {
+  id: int("id").autoincrement().primaryKey(),
+  phone: varchar("phone", { length: 32 }).notNull(),
+  message: text("message").notNull(),
+  otpCode: varchar("otpCode", { length: 8 }),
+  status: mysqlEnum("status", ["Envoyé", "Livré", "Échoué"]).default("Envoyé").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type UserLoyalty = typeof userLoyalty.$inferSelect;
+export type SmsGatewayLog = typeof smsGatewayLogs.$inferSelect;

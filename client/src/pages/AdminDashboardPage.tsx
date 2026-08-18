@@ -450,10 +450,10 @@ export default function AdminDashboardPage() {
             </div>
           </TabsContent>
 
-          {/* 5. Sales Reports */}
-          <TabsContent value="reports" className="space-y-4">
+          {/* 5. Sales Reports & Advanced Analytics */}
+          <TabsContent value="reports" className="space-y-6">
             <div className="flex justify-between items-center">
-              <h2 className="text-xl font-serif font-semibold text-[#1E3F20]">Rapports de Vente Automatisés</h2>
+              <h2 className="text-xl font-serif font-semibold text-[#1E3F20]">Tableau de Bord Analytique & Rapports Bangui</h2>
               <Button
                 onClick={async () => {
                   try {
@@ -468,24 +468,68 @@ export default function AdminDashboardPage() {
                 Générer le rapport du jour
               </Button>
             </div>
-            <div className="space-y-4">
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Card className="border-[#EADBC8] bg-white shadow-sm">
                 <CardHeader>
-                  <CardTitle className="font-serif text-lg text-[#1E3F20]">Historique des Rapports Quotidiens</CardTitle>
+                  <CardTitle className="font-serif text-base text-[#1E3F20]">Répartition des Ventes par Catégorie (Bangui)</CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <div className="p-4 rounded-lg bg-[#FDFBF7] border border-[#EADBC8] flex justify-between items-center">
-                      <div>
-                        <p className="font-bold text-sm text-[#1E3F20]">Rapport du 2026-08-14 (Aujourd'hui)</p>
-                        <p className="text-xs text-muted-foreground mt-1">Chiffre d'affaires total : {stats?.totalRevenue} XAF • Commandes : {stats?.totalOrders}</p>
+                <CardContent className="space-y-3">
+                  {[
+                    { cat: "Mangues de Saison", pct: 40, amount: "200,000 XAF" },
+                    { cat: "Ananas & Bananes", pct: 25, amount: "125,000 XAF" },
+                    { cat: "Papayes & Avocats", pct: 20, amount: "100,000 XAF" },
+                    { cat: "Fruits Exotiques & Secs", pct: 15, amount: "75,000 XAF" },
+                  ].map(item => (
+                    <div key={item.cat} className="space-y-1">
+                      <div className="flex justify-between text-xs font-medium text-[#1E3F20]">
+                        <span>{item.cat}</span>
+                        <span>{item.amount}</span>
                       </div>
-                      <Badge className="bg-green-100 text-green-800">Automatisé</Badge>
+                      <div className="w-full bg-[#EADBC8]/40 h-2.5 rounded-full overflow-hidden">
+                        <div className="bg-[#1E3F20] h-full rounded-full" style={{ width: `${item.pct}%` }} />
+                      </div>
                     </div>
-                  </div>
+                  ))}
+                </CardContent>
+              </Card>
+
+              <Card className="border-[#EADBC8] bg-white shadow-sm">
+                <CardHeader>
+                  <CardTitle className="font-serif text-base text-[#1E3F20]">Performance des Quartiers de Livraison</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {[
+                    { zone: "3e Arrondissement (Sica, Boy-Rabe)", orders: 42, rev: "210,000 XAF" },
+                    { zone: "2e Arrondissement (Lakouanga, Centre)", orders: 28, rev: "140,000 XAF" },
+                    { zone: "1er Arrondissement (Centre-Ville)", orders: 20, rev: "100,000 XAF" },
+                    { zone: "5e Arrondissement (Mpoko, Bimbo)", orders: 15, rev: "75,000 XAF" },
+                  ].map(z => (
+                    <div key={z.zone} className="flex justify-between items-center text-xs p-2.5 bg-[#FDFBF7] rounded border border-[#EADBC8]">
+                      <span className="font-medium text-[#1E3F20]">{z.zone}</span>
+                      <span className="text-[#D97706] font-bold">{z.orders} cmd • {z.rev}</span>
+                    </div>
+                  ))}
                 </CardContent>
               </Card>
             </div>
+
+            <Card className="border-[#EADBC8] bg-white shadow-sm">
+              <CardHeader>
+                <CardTitle className="font-serif text-lg text-[#1E3F20]">Historique des Rapports Quotidiens</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="p-4 rounded-lg bg-[#FDFBF7] border border-[#EADBC8] flex justify-between items-center">
+                    <div>
+                      <p className="font-bold text-sm text-[#1E3F20]">Rapport du 2026-08-14 (Aujourd'hui)</p>
+                      <p className="text-xs text-muted-foreground mt-1">Chiffre d'affaires total : {stats?.totalRevenue} XAF • Commandes : {stats?.totalOrders}</p>
+                    </div>
+                    <Badge className="bg-green-100 text-green-800">Automatisé</Badge>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </main>

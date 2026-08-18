@@ -4,7 +4,7 @@ import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { products, deliveryZones, orders, orderItems, returns, users, reviews, salesReports, referrals, pushSubscriptions } from "../drizzle/schema";
+import { products, deliveryZones, orders, orderItems, returns, users, reviews, salesReports, referrals, pushSubscriptions, userLoyalty, smsGatewayLogs } from "../drizzle/schema";
 import { eq, desc } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 
@@ -521,6 +521,58 @@ export const appRouter = router({
         });
         return { success: true };
       }),
+
+    getLoyaltyStatus: protectedProcedure.query(async ({ ctx }) => {
+      const db = await getDb();
+      if (!db) return { points: 150, tier: "VIP Or" };
+      const res = await db.select().from(userLoyalty).where(eq(userLoyalty.userId, ctx.user.id)).limit(1);
+      if (res.length > 0) return res[0];
+      await db.insert(userLoyalty).values({ userId: ctx.user.id, points: 150, tier: "VIP Or" });
+      const created = await db.select().from(userLoyalty).where(eq(userLoyalty.userId, ctx.user.id)).limit(1);
+      return created[0];
+    }),
+
+    convertLoyaltyPoints: protectedProcedure
+      .input(z.object({ pointsToConvert: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
+        const res = await db.select().from(userLoyalty).where(eq(userLoyalty.userId, ctx.user.id)).limit(1);
+        const current = res.length > 0 ? res[0] : { points: 150 };
+        if (current.points < input.pointsToConvert) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Points insuffisants.' });
+        }
+        const newPoints = current.points - input.pointsToConvert;
+        if (res.length > 0) {
+          await db.update(userLoyalty).set({ points: newPoints }).where(eq(userLoyalty.userId, ctx.user.id));
+        } else {
+          await db.insert(userLoyalty).values({ userId: ctx.user.id, points: newPoints, tier: "VIP Or" });
+        }
+        const discountValue = input.pointsToConvert * 10; // 1 pt = 10 FCFA
+        return { success: true, remainingPoints: newPoints, discountValue };
+      }),
+
+    sendSmsOtp: publicProcedure
+      .input(z.object({ phone: z.string() }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
+        const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+        const message = `[Prince Délice Bangui] Votre code de sécurité OTP est : ${otpCode}. Valide 5 minutes.`;
+        await db.insert(smsGatewayLogs).values({
+          phone: input.phone,
+          message,
+          otpCode,
+          status: 'Envoyé',
+        });
+        return { success: true, otpCode, message };
+      }),
+
+    getSmsLogs: adminProcedure.query(async () => {
+      const db = await getDb();
+      if (!db) return [];
+      return await db.select().from(smsGatewayLogs).orderBy(desc(smsGatewayLogs.createdAt)).limit(50);
+    }),
   }),
 });
 
