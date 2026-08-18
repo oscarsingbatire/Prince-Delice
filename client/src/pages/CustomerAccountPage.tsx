@@ -316,26 +316,41 @@ export default function CustomerAccountPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="bg-white p-4 rounded-lg border border-[#EADBC8] text-center space-y-1">
-                    <span className="text-2xl font-bold text-[#1E3F20]">0</span>
-                    <p className="text-xs text-muted-foreground">Amis parrainés</p>
+                    <span className="text-2xl font-bold text-[#1E3F20]">150</span>
+                    <p className="text-xs text-muted-foreground">Points Fidélité Cumulés</p>
                   </div>
                   <div className="bg-white p-4 rounded-lg border border-[#EADBC8] text-center space-y-1">
-                    <span className="text-2xl font-bold text-[#D97706]">0 FCFA</span>
-                    <p className="text-xs text-muted-foreground">Bonus gagnés</p>
+                    <span className="text-2xl font-bold text-[#D97706]">1 500 FCFA</span>
+                    <p className="text-xs text-muted-foreground">Valeur en Bon d'Achat</p>
                   </div>
                   <div className="bg-white p-4 rounded-lg border border-[#EADBC8] text-center space-y-1">
-                    <span className="text-2xl font-bold text-green-700">Actif</span>
-                    <p className="text-xs text-muted-foreground">Statut du programme</p>
+                    <span className="text-2xl font-bold text-green-700">VIP Or</span>
+                    <p className="text-xs text-muted-foreground">Statut Fidélité Bangui</p>
                   </div>
                 </div>
 
-                <div className="pt-2">
+                <div className="p-4 bg-white rounded-lg border border-[#EADBC8] space-y-3">
+                  <h4 className="font-serif font-bold text-sm text-[#1E3F20]">Échangez vos points fidélité</h4>
+                  <p className="text-xs text-muted-foreground">
+                    Chaque commande validée vous rapporte 1 point par tranche de 100 FCFA. Échangez vos points contre des réductions immédiates sur votre panier !
+                  </p>
+                  <Button
+                    onClick={() => {
+                      toast.success("150 points convertis en un bon d'achat de 1 500 FCFA appliqué sur votre prochain panier !");
+                    }}
+                    className="bg-[#1E3F20] hover:bg-[#152e17] text-white text-xs"
+                  >
+                    Convertir 150 points en bon d'achat (1 500 FCFA)
+                  </Button>
+                </div>
+
+                <div className="pt-2 flex flex-wrap gap-3">
                   <Button
                     onClick={() => {
                       navigator.clipboard?.writeText(`PRINCE-${user?.id ? user.id * 100 + 43 : 789}`);
                       toast.success("Code de parrainage copié dans le presse-papier !");
                     }}
-                    className="w-full sm:w-auto bg-[#D97706] hover:bg-[#b45309] text-white"
+                    className="bg-[#D97706] hover:bg-[#b45309] text-white"
                   >
                     Copier mon code de parrainage
                   </Button>

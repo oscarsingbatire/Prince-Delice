@@ -11,3 +11,6 @@
 - [x] Implémentation du workflow de retours et réclamations (soumission de photos sous 24h, avoir, remboursement, remplacement)
 - [x] Développement du back-office administrateur complet (gestion commandes, produits, stocks, zones de livraison)
 - [x] Écriture et exécution des tests unitaires Vitest pour valider les fonctionnalités clés
+- [ ] Ajouter le programme de fidélité par points cumulés échangeables au panier
+- [ ] Ajouter un tableau de bord analytique graphique avancé pour l'administrateur
+- [ ] Ajouter la simulation de passerelle SMS pour les notifications et codes OTP
