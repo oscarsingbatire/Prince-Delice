@@ -117,14 +117,14 @@ export default function CheckoutPage() {
               <p>⏱ <strong>Délai estimé :</strong> {selectedZone?.estimatedTime}</p>
               <p>💳 <strong>Paiement :</strong> {paymentMethod === 'orange_money' ? 'Orange Money' : paymentMethod === 'visa_mastercard' ? 'Carte Bancaire Visa/Mastercard' : 'Paiement à la livraison'}</p>
             </div>
-            <div className="flex gap-4 w-full mt-4">
-              <Link href="/account" className="flex-1">
-                <Button className="w-full bg-[#1E3F20] hover:bg-[#152e17] text-white">
+            <div className="flex flex-col sm:flex-row gap-3 w-full mt-4">
+              <Link href="/account" className="w-full sm:flex-1">
+                <Button className="w-full bg-[#1E3F20] hover:bg-[#152e17] text-white py-3 h-auto text-sm font-medium">
                   Suivre mes commandes
                 </Button>
               </Link>
-              <Link href="/" className="flex-1">
-                <Button variant="outline" className="w-full border-[#EADBC8] text-[#1E3F20]">
+              <Link href="/" className="w-full sm:flex-1">
+                <Button variant="outline" className="w-full border-[#EADBC8] text-[#1E3F20] hover:bg-[#EADBC8]/20 py-3 h-auto text-sm font-medium">
                   Retour à l'accueil
                 </Button>
               </Link>
