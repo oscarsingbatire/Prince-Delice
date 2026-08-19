@@ -293,18 +293,39 @@ export default function CustomerAccountPage() {
                         </div>
 
                         {ord.status === 'Livrée' && (
-                          <div className="p-3 bg-white rounded-lg border border-[#EADBC8] flex items-center justify-between">
-                            <span className="text-xs font-medium text-[#1E3F20]">Noter le livreur Jean-Marc :</span>
-                            <div className="flex gap-1">
-                              {[1, 2, 3, 4, 5].map(star => (
-                                <button
-                                  key={star}
-                                  onClick={() => toast.success(`Merci ! Note de ${star}/5 étoiles enregistrée pour le livreur.`)}
-                                  className="text-amber-500 hover:scale-125 transition text-lg"
-                                >
-                                  ★
-                                </button>
-                              ))}
+                          <div className="p-4 bg-white rounded-xl border border-[#EADBC8] space-y-3">
+                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-[#EADBC8]/50 pb-3">
+                              <div>
+                                <p className="text-xs font-bold text-[#1E3F20]">⭐ Noter la qualité de livraison</p>
+                                <p className="text-[11px] text-muted-foreground">Livreur : {ord.driver ? ord.driver.name : "Jean-Marc"}</p>
+                              </div>
+                              <div className="flex gap-1">
+                                {[1, 2, 3, 4, 5].map(star => (
+                                  <button
+                                    key={star}
+                                    onClick={() => toast.success(`Merci ! Note de ${star}/5 étoiles enregistrée pour le livreur.`)}
+                                    className="text-amber-500 hover:scale-125 transition text-xl px-1"
+                                    title={`Noter ${star} étoiles`}
+                                  >
+                                    ★
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                            <div className="flex items-center justify-between pt-1">
+                              <span className="text-xs text-muted-foreground">Un problème constaté sur cette livraison ?</span>
+                              <button
+                                onClick={() => {
+                                  setReturnOrderId(ord.id);
+                                  // Switch to returns tab
+                                  const returnsTabBtn = document.querySelector('[value="returns"]') as HTMLButtonElement;
+                                  if (returnsTabBtn) returnsTabBtn.click();
+                                  toast.info(`Commande #${ord.id} sélectionnée pour réclamation.`);
+                                }}
+                                className="inline-flex items-center gap-1.5 text-xs bg-red-50 hover:bg-red-100 text-red-700 font-medium px-3 py-1.5 rounded-lg border border-red-200 transition"
+                              >
+                                ⚠️ Signaler un problème (24h)
+                              </button>
                             </div>
                           </div>
                         )}
