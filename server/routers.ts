@@ -65,6 +65,12 @@ export const appRouter = router({
       return await db.select().from(deliveryZones);
     }),
 
+    getAvailableDrivers: publicProcedure.query(async () => {
+      const db = await getDb();
+      if (!db) return [];
+      return await db.select().from(drivers).where(eq(drivers.status, "Disponible"));
+    }),
+
     seedInitialData: publicProcedure.mutation(async () => {
       const db = await getDb();
       if (!db) return { success: false };
@@ -219,6 +225,7 @@ export const appRouter = router({
         })),
         deliveryFee: z.string(),
         totalAmount: z.string(),
+        driverId: z.number().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         const db = await getDb();
@@ -239,6 +246,16 @@ export const appRouter = router({
         });
 
         const orderId = (orderResult as any).insertId;
+
+        if (input.driverId) {
+          // Assign driver immediately if selected by customer
+          await db.update(drivers)
+            .set({ status: 'En tournée', assignedOrderId: orderId, currentLocation: 'En route vers client (Bangui)' })
+            .where(eq(drivers.id, input.driverId));
+          await db.update(orders)
+            .set({ status: 'En cours de livraison' })
+            .where(eq(orders.id, orderId));
+        }
 
         for (const item of input.items) {
           await db.insert(orderItems).values({

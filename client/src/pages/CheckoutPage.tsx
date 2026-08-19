@@ -18,9 +18,11 @@ export default function CheckoutPage() {
   const [cart, setCart] = useState<CartItem[]>([]);
 
   const { data: zones = [] } = trpc.shop.getDeliveryZones.useQuery();
+  const { data: availableDrivers = [] } = trpc.shop.getAvailableDrivers.useQuery();
   const createOrderMutation = trpc.shop.createOrder.useMutation();
 
   const [customerName, setCustomerName] = useState(user?.name || "");
+  const [selectedDriverId, setSelectedDriverId] = useState<string>("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [deliveryAddress, setDeliveryAddress] = useState("");
   const [selectedZoneId, setSelectedZoneId] = useState<string>("");
@@ -85,6 +87,7 @@ export default function CheckoutPage() {
         })),
         deliveryFee: deliveryFee.toString(),
         totalAmount: totalAmount.toString(),
+        driverId: selectedDriverId ? Number(selectedDriverId) : undefined,
       });
 
       if (res.success) {
@@ -242,6 +245,29 @@ export default function CheckoutPage() {
                     onChange={e => setDeliveryAddress(e.target.value)}
                     placeholder="Ex: Avenue des Martyrs, près de la pharmacie..."
                   />
+                </div>
+
+                <div className="space-y-2 pt-2 border-t border-[#EADBC8]">
+                  <Label htmlFor="driver" className="flex items-center gap-1.5 text-[#1E3F20] font-semibold">
+                    <span>🛵</span> Choisir un livreur disponible à Bangui (Optionnel)
+                  </Label>
+                  <Select value={selectedDriverId} onValueChange={setSelectedDriverId}>
+                    <SelectTrigger id="driver">
+                      <SelectValue placeholder="-- Laisser l'admin assigner ou choisir un livreur --" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableDrivers.length === 0 ? (
+                        <div className="p-2 text-xs text-muted-foreground text-center">Aucun livreur disponible pour l'instant</div>
+                      ) : (
+                        availableDrivers.map(d => (
+                          <SelectItem key={d.id} value={d.id.toString()}>
+                            {d.name} ({d.vehicle}) - Secteur : {d.arrondissement}
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">Sélectionnez un coursier libre pour assurer une prise en charge immédiate depuis le dépôt PK0.</p>
                 </div>
               </CardContent>
             </Card>
