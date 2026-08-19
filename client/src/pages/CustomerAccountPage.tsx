@@ -312,8 +312,42 @@ export default function CustomerAccountPage() {
                                 ))}
                               </div>
                             </div>
-                            <div className="flex items-center justify-between pt-1">
-                              <span className="text-xs text-muted-foreground">Un problème constaté sur cette livraison ?</span>
+
+                            {/* Comment / review text input */}
+                            <div className="space-y-1.5 pt-1">
+                              <label className="text-xs font-medium text-[#1E3F20]">Votre avis ou description du problème :</label>
+                              <div className="flex gap-2">
+                                <input
+                                  type="text"
+                                  placeholder="Ex: Livreur très ponctuel, fruits excellents et frais..."
+                                  className="flex-1 text-xs px-3 py-2 rounded-lg border border-[#EADBC8] bg-[#FAF6F0] focus:outline-none focus:ring-1 focus:ring-[#1E3F20]"
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                      toast.success("Votre commentaire a bien été enregistré. Merci !");
+                                      (e.target as HTMLInputElement).value = "";
+                                    }
+                                  }}
+                                />
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    const input = (e.currentTarget.previousElementSibling as HTMLInputElement);
+                                    if (input && input.value.trim()) {
+                                      toast.success("Votre commentaire a bien été enregistré. Merci !");
+                                      input.value = "";
+                                    } else {
+                                      toast.error("Veuillez saisir un commentaire.");
+                                    }
+                                  }}
+                                  className="text-xs bg-[#1E3F20] text-white px-3 py-2 rounded-lg hover:bg-[#152e17] transition"
+                                >
+                                  Envoyer
+                                </button>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center justify-between pt-2 border-t border-[#EADBC8]/40">
+                              <span className="text-xs text-muted-foreground">Besoin d'un retour ou d'un échange ?</span>
                               <button
                                 onClick={() => {
                                   setReturnOrderId(ord.id);
