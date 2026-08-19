@@ -74,6 +74,7 @@ export default function AdminDashboardPage() {
   const addDriverMutation = trpc.shop.addDriver.useMutation();
   const assignDriverMutation = trpc.shop.assignDriver.useMutation();
   const updateDriverStatusMutation = trpc.shop.updateDriverStatus.useMutation();
+  const deleteDriverMutation = trpc.shop.deleteDriver.useMutation();
 
   const [paidDrivers, setPaidDrivers] = useState<Record<number, { paid: boolean; date: string }>>({});
 
@@ -710,12 +711,12 @@ export default function AdminDashboardPage() {
                               </div>
                             </div>
 
-                            {/* Order Assignment Selector */}
+                            {/* Order Assignment Selector & Delete */}
                             <div className="pt-2 border-t border-[#EADBC8] flex flex-col sm:flex-row items-center justify-between gap-3">
                               <span className="text-xs font-medium text-[#1E3F20]">
                                 {driver.assignedOrderId ? `Commande active assignée : #${driver.assignedOrderId}` : 'Aucune commande assignée'}
                               </span>
-                              <div className="flex items-center gap-2 w-full sm:w-auto">
+                              <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
                                 <Select
                                   onValueChange={(ordId) => handleAssignDriver(driver.id, Number(ordId))}
                                 >
@@ -730,6 +731,25 @@ export default function AdminDashboardPage() {
                                     ))}
                                   </SelectContent>
                                 </Select>
+
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  className="h-8 text-xs bg-red-600 hover:bg-red-700 text-white"
+                                  onClick={async () => {
+                                    if (window.confirm(`Voulez-vous vraiment supprimer le livreur ${driver.name} ?`)) {
+                                      try {
+                                        await deleteDriverMutation.mutateAsync({ driverId: driver.id });
+                                        toast.success(`Livreur ${driver.name} supprimé avec succès.`);
+                                        utils.shop.getDrivers.invalidate();
+                                      } catch {
+                                        toast.error("Erreur lors de la suppression du livreur.");
+                                      }
+                                    }
+                                  }}
+                                >
+                                  🗑️ Supprimer
+                                </Button>
                               </div>
                             </div>
                           </div>

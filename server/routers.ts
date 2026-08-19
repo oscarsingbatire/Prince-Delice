@@ -667,6 +667,15 @@ export const appRouter = router({
           .where(eq(drivers.id, input.driverId));
         return { success: true };
       }),
+
+    deleteDriver: adminProcedure
+      .input(z.object({ driverId: z.number() }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
+        await db.delete(drivers).where(eq(drivers.id, input.driverId));
+        return { success: true };
+      }),
   }),
 });
 
