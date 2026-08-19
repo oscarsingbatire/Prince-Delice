@@ -416,7 +416,7 @@ export default function CustomerAccountPage() {
                   </Button>
                   <Button
                     onClick={() => {
-                      const text = encodeURIComponent(`Rejoins-moi sur Prince Délice Bangui pour commander des fruits frais ! Utilise mon code de parrainage PRINCE-${user?.id ? user.id * 100 + 43 : 789} pour 500 FCFA de réduction sur ta première commande : https://fruitsmgr-glskqixm.manus.space`);
+                      const text = encodeURIComponent(`Rejoins-moi sur Prince Délice Bangui pour commander des fruits frais ! Utilise mon code de parrainage PRINCE-${user?.id ? user.id * 100 + 43 : 789} pour 500 FCFA de réduction sur ta première commande : https://princedelice.manus.space`);
                       window.open(`https://api.whatsapp.com/send?text=${text}`, '_blank');
                     }}
                     className="bg-[#25D366] hover:bg-[#20ba5a] text-white text-xs"
