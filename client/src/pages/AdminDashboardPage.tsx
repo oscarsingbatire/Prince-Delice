@@ -9,6 +9,16 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Package, DollarSign, AlertTriangle, ShieldCheck, Truck, Plus, CheckCircle, XCircle } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Link } from "wouter";
 import { MapView } from "@/components/Map";
 import { startLogin } from "@/const";
@@ -27,12 +37,15 @@ export default function AdminDashboardPage() {
   const deleteOrderMutation = trpc.shop.deleteOrder.useMutation();
   const processReturnMutation = trpc.shop.processReturn.useMutation();
 
-  const handleDeleteOrder = async (orderId: number) => {
-    if (!confirm(`Êtes-vous sûr de vouloir supprimer/annuler la commande #${orderId} (faux client / test) ?`)) return;
+  const [orderToDelete, setOrderToDelete] = useState<number | null>(null);
+
+  const confirmDeleteOrder = async () => {
+    if (!orderToDelete) return;
     try {
-      await deleteOrderMutation.mutateAsync({ orderId });
-      toast.success(`Commande #${orderId} supprimée avec succès.`);
+      await deleteOrderMutation.mutateAsync({ orderId: orderToDelete });
+      toast.success(`Commande #${orderToDelete} supprimée avec succès.`);
       utils.shop.getAllOrders.invalidate();
+      setOrderToDelete(null);
     } catch {
       toast.error("Erreur lors de la suppression de la commande.");
     }
@@ -307,7 +320,7 @@ export default function AdminDashboardPage() {
                         variant="destructive"
                         className="text-xs h-9 px-2"
                         title="Supprimer la commande (Faux client)"
-                        onClick={() => handleDeleteOrder(ord.id)}
+                        onClick={() => setOrderToDelete(ord.id)}
                       >
                         🗑️ Supprimer
                       </Button>
@@ -329,6 +342,27 @@ export default function AdminDashboardPage() {
               ))}
             </div>
           </TabsContent>
+
+          {/* Security Alert Dialog for Order Deletion */}
+          <AlertDialog open={orderToDelete !== null} onOpenChange={(open) => !open && setOrderToDelete(null)}>
+            <AlertDialogContent className="bg-white border-[#EADBC8]">
+              <AlertDialogHeader>
+                <AlertDialogTitle className="font-serif text-[#1E3F20] text-xl">Confirmation de Sécurité</AlertDialogTitle>
+                <AlertDialogDescription className="text-muted-foreground text-sm">
+                  Êtes-vous absolument sûr de vouloir supprimer définitivement la commande #{orderToDelete} ? Cette action est irréversible et sert à purger les faux clients ou les tests de commande.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel className="border-[#EADBC8] text-[#1E3F20]">Annuler</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={confirmDeleteOrder}
+                  className="bg-red-600 hover:bg-red-700 text-white"
+                >
+                  Oui, supprimer définitivement
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
 
           {/* 2. Stocks & Products */}
           <TabsContent value="stocks" className="space-y-6">
