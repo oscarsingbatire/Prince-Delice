@@ -250,6 +250,30 @@ export default function CustomerAccountPage() {
                           </div>
                         </div>
 
+                        {/* Historique visuel des étapes de livraison */}
+                        <div className="bg-white p-4 rounded-xl border border-[#EADBC8] space-y-3">
+                          <p className="font-serif font-bold text-xs uppercase tracking-wider text-[#1E3F20]">Étapes de la Commande</p>
+                          <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 text-xs">
+                            {(() => {
+                              const steps = [
+                                { label: "1. Validée", active: true, desc: "Paiement & Commande confirmés" },
+                                { label: "2. En préparation", active: ['En préparation', 'En cours de livraison', 'Livrée'].includes(ord.status), desc: "Sélection des fruits frais (PK0)" },
+                                { label: "3. En livraison", active: ['En cours de livraison', 'Livrée'].includes(ord.status), desc: `Route vers ${ord.arrondissement}` },
+                                { label: "4. Livrée", active: ord.status === 'Livrée', desc: "Remise au client avec succès" }
+                              ];
+                              return steps.map((s, idx) => (
+                                <div key={idx} className={`p-2.5 rounded-lg border flex flex-col justify-between ${s.active ? 'bg-[#1E3F20]/5 border-[#1E3F20] text-[#1E3F20]' : 'bg-gray-50 border-gray-200 text-gray-400'}`}>
+                                  <div className="flex items-center justify-between font-bold">
+                                    <span>{s.label}</span>
+                                    <span>{s.active ? '✅' : '⏳'}</span>
+                                  </div>
+                                  <span className="text-[10px] mt-1 opacity-80">{s.desc}</span>
+                                </div>
+                              ));
+                            })()}
+                          </div>
+                        </div>
+
                         <div className="relative h-44 bg-[#1E3F20]/10 rounded-lg overflow-hidden border border-[#EADBC8] flex flex-col items-center justify-center p-4 text-center">
                           <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#1E3F20_1px,transparent_1px)] [background-size:16px_16px]" />
                           <div className="z-10 bg-white p-3 rounded-xl shadow-md border border-[#EADBC8] max-w-xs space-y-1">
