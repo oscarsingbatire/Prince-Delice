@@ -228,12 +228,26 @@ export default function CustomerAccountPage() {
                               </p>
                             </div>
                           </div>
-                          <a
-                            href={`tel:${ord.driver ? ord.driver.phone.replace(/\s+/g, '') : '+23672898938'}`}
-                            className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 bg-[#1E3F20] hover:bg-[#1E3F20]/90 text-white text-xs px-3.5 py-2 rounded-lg font-medium shadow-sm transition"
-                          >
-                            📞 Appeler le livreur
-                          </a>
+                          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                            <button
+                              onClick={() => {
+                                const phoneNum = ord.driver ? ord.driver.phone : "+23672898938";
+                                navigator.clipboard.writeText(phoneNum);
+                                toast.success(`Numéro ${phoneNum} copié ! Vous pouvez composer l'appel.`);
+                              }}
+                              className="inline-flex items-center justify-center gap-1.5 bg-[#1E3F20] hover:bg-[#1E3F20]/90 text-white text-xs px-3.5 py-2 rounded-lg font-medium shadow-sm transition"
+                            >
+                              📞 Copier le numéro
+                            </button>
+                            <a
+                              href={`https://wa.me/${(ord.driver ? ord.driver.phone : '+23672898938').replace(/[^0-9]/g, '')}?text=Bonjour%20livreur,%20je%20souhaite%20faire%20le%20point%20sur%20ma%20commande%20%23${ord.id}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center justify-center gap-1.5 bg-[#25D366] hover:bg-[#25D366]/90 text-white text-xs px-3.5 py-2 rounded-lg font-medium shadow-sm transition"
+                            >
+                              💬 WhatsApp Livreur
+                            </a>
+                          </div>
                         </div>
 
                         <div className="relative h-44 bg-[#1E3F20]/10 rounded-lg overflow-hidden border border-[#EADBC8] flex flex-col items-center justify-center p-4 text-center">
