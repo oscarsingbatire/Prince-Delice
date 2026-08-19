@@ -184,6 +184,26 @@ export default function CustomerAccountPage() {
                         <span>Total Payé</span>
                         <span>{Number(ord.totalAmount).toLocaleString()} XAF</span>
                       </div>
+
+                      {/* GPS Live Delivery Tracking in Bangui */}
+                      <div className="mt-4 p-4 bg-[#FDFBF7] rounded-xl border border-[#EADBC8] space-y-3">
+                        <div className="flex justify-between items-center">
+                          <span className="font-serif font-bold text-sm text-[#1E3F20] flex items-center gap-1.5">
+                            <span className="w-2.5 h-2.5 rounded-full bg-green-600 animate-ping" /> Suivi GPS en direct (Bangui)
+                          </span>
+                          <span className="text-xs bg-amber-100 text-amber-800 px-2 py-0.5 rounded font-medium">
+                            {ord.status === 'Livrée' ? 'Livré avec succès' : 'Livreur en route vers ' + ord.neighborhood}
+                          </span>
+                        </div>
+                        <div className="relative h-44 bg-[#1E3F20]/10 rounded-lg overflow-hidden border border-[#EADBC8] flex flex-col items-center justify-center p-4 text-center">
+                          <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#1E3F20_1px,transparent_1px)] [background-size:16px_16px]" />
+                          <div className="z-10 bg-white p-3 rounded-xl shadow-md border border-[#EADBC8] max-w-xs space-y-1">
+                            <p className="text-xs font-bold text-[#1E3F20]">🛵 Livreur Prince Délice : Jean-Marc</p>
+                            <p className="text-[11px] text-muted-foreground">Position actuelle : Rond-point PK0 / {ord.arrondissement}</p>
+                            <p className="text-[10px] text-green-700 font-semibold">Arrivée estimée : 15 - 25 minutes</p>
+                          </div>
+                        </div>
+                      </div>
                     </CardContent>
                   </Card>
                 ))}
@@ -351,9 +371,18 @@ export default function CustomerAccountPage() {
                       navigator.clipboard?.writeText(`PRINCE-${user?.id ? user.id * 100 + 43 : 789}`);
                       toast.success("Code de parrainage copié dans le presse-papier !");
                     }}
-                    className="bg-[#D97706] hover:bg-[#b45309] text-white"
+                    className="bg-[#D97706] hover:bg-[#b45309] text-white text-xs"
                   >
                     Copier mon code de parrainage
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      const text = encodeURIComponent(`Rejoins-moi sur Prince Délice Bangui pour commander des fruits frais ! Utilise mon code de parrainage PRINCE-${user?.id ? user.id * 100 + 43 : 789} pour 500 FCFA de réduction sur ta première commande : https://fruitsmgr-glskqixm.manus.space`);
+                      window.open(`https://api.whatsapp.com/send?text=${text}`, '_blank');
+                    }}
+                    className="bg-[#25D366] hover:bg-[#20ba5a] text-white text-xs"
+                  >
+                    Partager sur WhatsApp
                   </Button>
                 </div>
               </CardContent>

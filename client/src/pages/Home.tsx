@@ -333,6 +333,34 @@ export default function Home() {
         )}
       </section>
 
+      {/* Nutritional Comparison Section */}
+      <section className="py-16 px-6 bg-white border-t border-[#EADBC8]">
+        <div className="max-w-6xl mx-auto space-y-8">
+          <div className="text-center space-y-2">
+            <Badge className="bg-[#D97706] text-white">Guide Santé & Vitamines</Badge>
+            <h2 className="text-3xl font-serif font-bold text-[#1E3F20]">Comparateur Nutritionnel des Fruits de Bangui</h2>
+            <p className="text-muted-foreground text-sm max-w-xl mx-auto">Découvrez les apports essentiels de chaque fruit pour composer votre panier idéal selon vos besoins en énergie et immunité.</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            {[
+              { fruit: "Mangue Kent", vitamin: "Vitamine A & C", benefit: "Immunité & Peau éclatante", color: "bg-amber-50 border-amber-200 text-amber-900" },
+              { fruit: "Ananas Victoria", vitamin: "Bromélaïne & Vit. C", benefit: "Digestion & Anti-inflammatoire", color: "bg-yellow-50 border-yellow-200 text-yellow-900" },
+              { fruit: "Papaye Fraîche", vitamin: "Papaïne & Antioxydants", benefit: "Confort digestif & Énergie", color: "bg-orange-50 border-orange-200 text-orange-900" },
+              { fruit: "Avocat Local", vitamin: "Oméga-3 & Bonnes Graisses", benefit: "Protection Cardiovasculaire", color: "bg-green-50 border-green-200 text-green-900" },
+            ].map(comp => (
+              <div key={comp.fruit} className={`p-5 rounded-xl border ${comp.color} space-y-3 shadow-sm`}>
+                <h3 className="font-serif font-bold text-lg">{comp.fruit}</h3>
+                <div className="text-xs space-y-1">
+                  <p className="font-semibold">⚡ {comp.vitamin}</p>
+                  <p className="opacity-80">💡 {comp.benefit}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Engagement & Logistics Section */}
       <section id="engagement" className="bg-[#F8F5EE] border-t border-b border-[#EADBC8] py-16 px-6 mt-16">
         <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
