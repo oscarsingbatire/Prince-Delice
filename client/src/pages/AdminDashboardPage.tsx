@@ -50,6 +50,8 @@ export default function AdminDashboardPage() {
   const assignDriverMutation = trpc.shop.assignDriver.useMutation();
   const updateDriverStatusMutation = trpc.shop.updateDriverStatus.useMutation();
 
+  const [paidDrivers, setPaidDrivers] = useState<Record<number, { paid: boolean; date: string }>>({});
+
   const [driverName, setDriverName] = useState("");
   const [driverPhone, setDriverPhone] = useState("");
   const [driverVehicle, setDriverVehicle] = useState("Moto Honda");
@@ -708,6 +710,7 @@ export default function AdminDashboardPage() {
                               const completedCount = driver.assignedOrderId ? 12 + idx : 8 + (idx * 2);
                               const commissionRate = 500; // 500 FCFA per delivery
                               const totalCommission = completedCount * commissionRate;
+                              const driverPaidInfo = paidDrivers[driver.id];
                               return (
                                 <tr key={driver.id} className="hover:bg-[#FDFBF7]/50">
                                   <td className="p-3 font-semibold text-[#1E3F20]">{driver.name}</td>
@@ -716,7 +719,33 @@ export default function AdminDashboardPage() {
                                   <td className="p-3 text-muted-foreground">{commissionRate} FCFA</td>
                                   <td className="p-3 font-bold text-green-700">{totalCommission.toLocaleString()} FCFA</td>
                                   <td className="p-3 text-right">
-                                    <Badge className="bg-green-100 text-green-800">Prêt pour versement</Badge>
+                                    {driverPaidInfo?.paid ? (
+                                      <div className="flex items-center justify-end gap-2">
+                                        <Badge className="bg-blue-100 text-blue-800">
+                                          ✅ Réglé ({driverPaidInfo.date})
+                                        </Badge>
+                                        <Button
+                                          size="sm"
+                                          variant="ghost"
+                                          className="text-xs h-7 text-muted-foreground hover:text-red-600"
+                                          onClick={() => setPaidDrivers(prev => ({ ...prev, [driver.id]: { paid: false, date: '' } }))}
+                                        >
+                                          Annuler
+                                        </Button>
+                                      </div>
+                                    ) : (
+                                      <Button
+                                        size="sm"
+                                        className="bg-[#1E3F20] hover:bg-[#152e17] text-white text-xs h-7"
+                                        onClick={() => {
+                                          const nowStr = new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                                          setPaidDrivers(prev => ({ ...prev, [driver.id]: { paid: true, date: nowStr } }));
+                                          toast.success(`Paiement des commissions validé pour ${driver.name} (${nowStr})`);
+                                        }}
+                                      >
+                                        Marquer comme Réglé
+                                      </Button>
+                                    )}
                                   </td>
                                 </tr>
                               );
