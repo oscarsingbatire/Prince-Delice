@@ -372,36 +372,77 @@ export default function CustomerAccountPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="photoUrl">Photo justificative du fruit (Défaut de fraîcheur sous 24h)</Label>
-                    <div className="grid grid-cols-3 gap-2 pb-2">
-                      {[
-                        { name: "Pomme", url: "https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?auto=format&fit=crop&w=400&q=80" },
-                        { name: "Fraise", url: "https://images.unsplash.com/photo-1464965911861-746a04b4bca6?auto=format&fit=crop&w=400&q=80" },
-                        { name: "Papaye", url: "https://images.unsplash.com/photo-1617093727343-374698b1b08d?auto=format&fit=crop&w=400&q=80" },
-                        { name: "Avocat", url: "https://images.unsplash.com/photo-1523049673857-eb18f1d7b578?auto=format&fit=crop&w=400&q=80" },
-                        { name: "Pastèque", url: "https://images.unsplash.com/photo-1587049352847-4a222e784d38?auto=format&fit=crop&w=400&q=80" },
-                        { name: "Autre fruit", url: "https://images.unsplash.com/photo-1610832958506-aa56368176cf?auto=format&fit=crop&w=400&q=80" },
-                      ].map(img => (
-                        <div
-                          key={img.name}
-                          onClick={() => setReturnPhotoUrl(img.url)}
-                          className={`cursor-pointer rounded-lg border p-1 text-center transition ${
-                            returnPhotoUrl === img.url ? "border-[#1E3F20] bg-[#FEF3C7]/40 ring-2 ring-[#1E3F20]" : "border-[#EADBC8] bg-white hover:bg-gray-50"
-                          }`}
-                        >
-                          <img src={img.url} alt={img.name} className="w-full h-16 object-cover rounded mb-1" />
-                          <span className="text-[10px] font-semibold text-[#1E3F20]">{img.name}</span>
-                        </div>
-                      ))}
+                    <Label htmlFor="photoUpload">Photo justificative du produit reçu (Défaut de fraîcheur sous 24h)</Label>
+                    
+                    {/* File upload input */}
+                    <div className="p-4 border-2 border-dashed border-[#EADBC8] rounded-xl bg-[#FAF6F0] text-center space-y-2">
+                      <div className="flex flex-col items-center justify-center">
+                        <svg className="w-8 h-8 text-[#1E3F20] mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                        </svg>
+                        <p className="text-xs font-medium text-[#1E3F20]">Télécharger une photo depuis votre appareil</p>
+                        <p className="text-[11px] text-muted-foreground">Formats acceptés : JPG, PNG, WEBP (Max 5Mo)</p>
+                      </div>
+                      <input
+                        type="file"
+                        id="photoUpload"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const simulatedUrl = URL.createObjectURL(file);
+                            setReturnPhotoUrl(simulatedUrl);
+                            toast.success(`Photo "${file.name}" chargée avec succès !`);
+                          }
+                        }}
+                        className="block w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-[#1E3F20] file:text-white hover:file:bg-[#152e17] cursor-pointer"
+                      />
                     </div>
-                    <Input
-                      id="photoUrl"
-                      value={returnPhotoUrl}
-                      onChange={e => setReturnPhotoUrl(e.target.value)}
-                      placeholder="Ou saisissez l'URL de votre photo..."
-                      className="text-xs"
-                    />
-                    <p className="text-xs text-muted-foreground">Sélectionnez le fruit concerné ci-dessus ou indiquez le lien de votre photo justificative.</p>
+
+                    {returnPhotoUrl && (
+                      <div className="mt-2 flex items-center gap-3 p-2 bg-white rounded-lg border border-[#EADBC8]">
+                        <img src={returnPhotoUrl} alt="Aperçu réclamation" className="w-12 h-12 object-cover rounded-md border" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-semibold text-[#1E3F20] truncate">Photo sélectionnée</p>
+                          <p className="text-[11px] text-muted-foreground truncate">{returnPhotoUrl}</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setReturnPhotoUrl("")}
+                          className="text-xs text-red-600 hover:text-red-800 font-medium px-2 py-1"
+                        >
+                          Retirer
+                        </button>
+                      </div>
+                    )}
+
+                    <div className="pt-2">
+                      <p className="text-xs font-medium text-[#1E3F20] mb-1.5">Ou sélectionnez un exemple type de fruit :</p>
+                      <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                        {[
+                          { name: "Pomme", url: "https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?auto=format&fit=crop&w=400&q=80" },
+                          { name: "Fraise", url: "https://images.unsplash.com/photo-1464965911861-746a04b4bca6?auto=format&fit=crop&w=400&q=80" },
+                          { name: "Papaye", url: "https://images.unsplash.com/photo-1617093727343-374698b1b08d?auto=format&fit=crop&w=400&q=80" },
+                          { name: "Avocat", url: "https://images.unsplash.com/photo-1523049673857-eb18f1d7b578?auto=format&fit=crop&w=400&q=80" },
+                          { name: "Pastèque", url: "https://images.unsplash.com/photo-1587049352847-4a222e784d38?auto=format&fit=crop&w=400&q=80" },
+                          { name: "Autre fruit", url: "https://images.unsplash.com/photo-1610832958506-aa56368176cf?auto=format&fit=crop&w=400&q=80" },
+                        ].map(img => (
+                          <div
+                            key={img.name}
+                            onClick={() => {
+                              setReturnPhotoUrl(img.url);
+                              toast.success(`Fruit "${img.name}" sélectionné comme modèle.`);
+                            }}
+                            className={`cursor-pointer rounded-lg border p-1 text-center transition ${
+                              returnPhotoUrl === img.url ? "border-[#1E3F20] bg-[#FEF3C7]/40 ring-2 ring-[#1E3F20]" : "border-[#EADBC8] bg-white hover:bg-gray-50"
+                            }`}
+                          >
+                            <img src={img.url} alt={img.name} className="w-full h-12 object-cover rounded mb-1" />
+                            <span className="text-[10px] font-semibold text-[#1E3F20]">{img.name}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   </div>
 
                   <Button type="submit" disabled={isSubmittingReturn} className="bg-[#1E3F20] hover:bg-[#152e17] text-white">
