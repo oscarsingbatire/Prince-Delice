@@ -283,7 +283,9 @@ export const appRouter = router({
       const result = [];
       for (const ord of userOrders) {
         const items = await db.select().from(orderItems).where(eq(orderItems.orderId, ord.id));
-        result.push({ ...ord, items });
+        // Trouver le livreur assigné à cette commande s'il existe
+        const [assignedDriver] = await db.select().from(drivers).where(eq(drivers.assignedOrderId, ord.id));
+        result.push({ ...ord, items, driver: assignedDriver || null });
       }
       return result;
     }),

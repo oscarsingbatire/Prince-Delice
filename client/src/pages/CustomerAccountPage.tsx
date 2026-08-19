@@ -208,18 +208,46 @@ export default function CustomerAccountPage() {
                             {ord.status === 'Livrée' ? '✅ Livré avec succès à votre porte' : '🛵 Livreur en route vers ' + ord.neighborhood}
                           </span>
                         </div>
+                        {/* Coordonnées du livreur assigné */}
+                        <div className="bg-white p-3.5 rounded-xl border border-[#EADBC8] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-[#D97706]/10 border border-[#D97706]/30 flex items-center justify-center text-xl flex-shrink-0">
+                              🛵
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <p className="font-serif font-bold text-sm text-[#1E3F20]">
+                                  {ord.driver ? ord.driver.name : "Jean-Marc (Coursier Principal)"}
+                                </p>
+                                <span className="text-[10px] bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-semibold">
+                                  {ord.driver ? ord.driver.vehicle : "Moto Honda - Secteur Bangui"}
+                                </span>
+                              </div>
+                              <p className="text-xs text-muted-foreground">
+                                Téléphone officiel : <span className="font-semibold text-[#1E3F20]">{ord.driver ? ord.driver.phone : "+236 72 89 89 38"}</span>
+                              </p>
+                            </div>
+                          </div>
+                          <a
+                            href={`tel:${ord.driver ? ord.driver.phone.replace(/\s+/g, '') : '+23672898938'}`}
+                            className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 bg-[#1E3F20] hover:bg-[#1E3F20]/90 text-white text-xs px-3.5 py-2 rounded-lg font-medium shadow-sm transition"
+                          >
+                            📞 Appeler le livreur
+                          </a>
+                        </div>
+
                         <div className="relative h-44 bg-[#1E3F20]/10 rounded-lg overflow-hidden border border-[#EADBC8] flex flex-col items-center justify-center p-4 text-center">
                           <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#1E3F20_1px,transparent_1px)] [background-size:16px_16px]" />
                           <div className="z-10 bg-white p-3 rounded-xl shadow-md border border-[#EADBC8] max-w-xs space-y-1">
                             {ord.status === 'Livrée' ? (
                               <>
                                 <p className="text-xs font-bold text-green-700">🎉 Livraison effectuée avec succès !</p>
-                                <p className="text-[11px] text-muted-foreground">Livreur : Jean-Marc • {ord.arrondissement}</p>
+                                <p className="text-[11px] text-muted-foreground">Livreur : {ord.driver ? ord.driver.name : "Jean-Marc"} • {ord.arrondissement}</p>
                               </>
                             ) : (
                               <>
-                                <p className="text-xs font-bold text-[#1E3F20]">🛵 Livreur Prince Délice : Jean-Marc</p>
-                                <p className="text-[11px] text-muted-foreground">Position actuelle : Rond-point PK0 / {ord.arrondissement}</p>
+                                <p className="text-xs font-bold text-[#1E3F20]">🛵 Livreur : {ord.driver ? ord.driver.name : "Jean-Marc"}</p>
+                                <p className="text-[11px] text-muted-foreground">Position actuelle : En route vers {ord.neighborhood}</p>
                                 <p className="text-[10px] text-green-700 font-semibold">Arrivée estimée : 15 - 25 minutes</p>
                               </>
                             )}
