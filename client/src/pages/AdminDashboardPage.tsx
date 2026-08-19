@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Package, DollarSign, AlertTriangle, ShieldCheck, Truck, Plus, CheckCircle, XCircle } from "lucide-react";
 import { Link } from "wouter";
+import { MapView } from "@/components/Map";
 import { startLogin } from "@/const";
 import { toast } from "sonner";
 
@@ -564,84 +565,115 @@ export default function AdminDashboardPage() {
                 </CardContent>
               </Card>
 
-              {/* Drivers Live Tour & Assignment Panel */}
-              <Card className="border-[#EADBC8] bg-white shadow-sm lg:col-span-2">
-                <CardHeader>
-                  <CardTitle className="font-serif text-lg text-[#1E3F20]">Équipe de Livraison & Suivi en Direct (Bangui)</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {drivers.length === 0 ? (
-                    <div className="text-center py-10 text-muted-foreground text-sm">
-                      Aucun livreur enregistré pour le moment. Utilisez le formulaire pour ajouter votre premier coursier.
+              {/* Drivers Live Tour & Assignment Panel + Interactive Map */}
+              <div className="lg:col-span-2 space-y-6">
+                <Card className="border-[#EADBC8] bg-white shadow-sm">
+                  <CardHeader>
+                    <CardTitle className="font-serif text-lg text-[#1E3F20] flex items-center gap-2">
+                      🗺️ Carte Interactive en Temps Réel (Bangui)
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-0 overflow-hidden rounded-b-xl">
+                    <div className="h-[350px] w-full relative">
+                      <MapView
+                        initialCenter={{ lat: 4.3612, lng: 18.5549 }}
+                        initialZoom={13}
+                        onMapReady={(map) => {
+                          // Add markers for drivers if available
+                          drivers.forEach((driver, idx) => {
+                            // Spread offsets slightly for visual separation
+                            const lat = 4.3612 + (idx * 0.01) - 0.005;
+                            const lng = 18.5549 + (idx * 0.01) - 0.005;
+                            new google.maps.marker.AdvancedMarkerElement({
+                              map,
+                              position: { lat, lng },
+                              title: `${driver.name} (${driver.status})`,
+                            });
+                          });
+                        }}
+                      />
                     </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {drivers.map(driver => (
-                        <div key={driver.id} className="p-4 bg-[#FDFBF7] rounded-xl border border-[#EADBC8] space-y-3">
-                          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <span className="font-bold text-[#1E3F20] text-base">{driver.name}</span>
-                                <Badge className={
-                                  driver.status === 'Disponible' ? 'bg-green-100 text-green-800' :
-                                  driver.status === 'En tournée' ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800'
-                                }>
-                                  {driver.status}
-                                </Badge>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-[#EADBC8] bg-white shadow-sm">
+                  <CardHeader>
+                    <CardTitle className="font-serif text-lg text-[#1E3F20]">Équipe de Livraison & Suivi en Direct (Bangui)</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {drivers.length === 0 ? (
+                      <div className="text-center py-10 text-muted-foreground text-sm">
+                        Aucun livreur enregistré pour le moment. Utilisez le formulaire pour ajouter votre premier coursier.
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {drivers.map(driver => (
+                          <div key={driver.id} className="p-4 bg-[#FDFBF7] rounded-xl border border-[#EADBC8] space-y-3">
+                            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <span className="font-bold text-[#1E3F20] text-base">{driver.name}</span>
+                                  <Badge className={
+                                    driver.status === 'Disponible' ? 'bg-green-100 text-green-800' :
+                                    driver.status === 'En tournée' ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800'
+                                  }>
+                                    {driver.status}
+                                  </Badge>
+                                </div>
+                                <p className="text-xs text-muted-foreground mt-0.5">📞 {driver.phone} • {driver.vehicle} • Secteur : {driver.arrondissement}</p>
+                                <p className="text-xs text-green-700 font-medium mt-1">📍 Position GPS : {driver.currentLocation}</p>
                               </div>
-                              <p className="text-xs text-muted-foreground mt-0.5">📞 {driver.phone} • {driver.vehicle} • Secteur : {driver.arrondissement}</p>
-                              <p className="text-xs text-green-700 font-medium mt-1">📍 Position GPS : {driver.currentLocation}</p>
+
+                              <div className="flex items-center gap-2 flex-wrap">
+                                {/* Status update buttons */}
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleUpdateDriverStatus(driver.id, 'Disponible', 'Dépôt PK0 / Centre (Prêt)')}
+                                  className="text-xs h-7 border-green-600 text-green-700 hover:bg-green-50"
+                                >
+                                  Dispo au Dépôt
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleUpdateDriverStatus(driver.id, 'De retour', 'Retour de tournée validé • Dépôt PK0')}
+                                  className="text-xs h-7 border-blue-600 text-blue-700 hover:bg-blue-50"
+                                >
+                                  Valider Retour
+                                </Button>
+                              </div>
                             </div>
 
-                            <div className="flex items-center gap-2 flex-wrap">
-                              {/* Status update buttons */}
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleUpdateDriverStatus(driver.id, 'Disponible', 'Dépôt PK0 / Centre (Prêt)')}
-                                className="text-xs h-7 border-green-600 text-green-700 hover:bg-green-50"
-                              >
-                                Dispo au Dépôt
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleUpdateDriverStatus(driver.id, 'De retour', 'Retour de tournée validé • Dépôt PK0')}
-                                className="text-xs h-7 border-blue-600 text-blue-700 hover:bg-blue-50"
-                              >
-                                Valider Retour
-                              </Button>
+                            {/* Order Assignment Selector */}
+                            <div className="pt-2 border-t border-[#EADBC8] flex flex-col sm:flex-row items-center justify-between gap-3">
+                              <span className="text-xs font-medium text-[#1E3F20]">
+                                {driver.assignedOrderId ? `Commande active assignée : #${driver.assignedOrderId}` : 'Aucune commande assignée'}
+                              </span>
+                              <div className="flex items-center gap-2 w-full sm:w-auto">
+                                <Select
+                                  onValueChange={(ordId) => handleAssignDriver(driver.id, Number(ordId))}
+                                >
+                                  <SelectTrigger className="w-full sm:w-48 text-xs h-8">
+                                    <SelectValue placeholder="Assigner une commande..." />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {orders.filter(o => o.status !== 'Livrée').map(o => (
+                                      <SelectItem key={o.id} value={o.id.toString()}>
+                                        Cmd #{o.id} - {o.customerName} ({o.arrondissement})
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
                             </div>
                           </div>
-
-                          {/* Order Assignment Selector */}
-                          <div className="pt-2 border-t border-[#EADBC8] flex flex-col sm:flex-row items-center justify-between gap-3">
-                            <span className="text-xs font-medium text-[#1E3F20]">
-                              {driver.assignedOrderId ? `Commande active assignée : #${driver.assignedOrderId}` : 'Aucune commande assignée'}
-                            </span>
-                            <div className="flex items-center gap-2 w-full sm:w-auto">
-                              <Select
-                                onValueChange={(ordId) => handleAssignDriver(driver.id, Number(ordId))}
-                              >
-                                <SelectTrigger className="w-full sm:w-48 text-xs h-8">
-                                  <SelectValue placeholder="Assigner une commande..." />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {orders.filter(o => o.status !== 'Livrée').map(o => (
-                                    <SelectItem key={o.id} value={o.id.toString()}>
-                                      Cmd #{o.id} - {o.customerName} ({o.arrondissement})
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
             </div>
           </TabsContent>
 
