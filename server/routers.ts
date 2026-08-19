@@ -342,6 +342,16 @@ export const appRouter = router({
         return { success: true };
       }),
 
+    deleteOrder: adminProcedure
+      .input(z.object({ orderId: z.number() }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
+        await db.delete(orderItems).where(eq(orderItems.orderId, input.orderId));
+        await db.delete(orders).where(eq(orders.id, input.orderId));
+        return { success: true };
+      }),
+
     getAllReturns: adminProcedure.query(async () => {
       const db = await getDb();
       if (!db) return [];

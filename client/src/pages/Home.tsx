@@ -221,6 +221,12 @@ export default function Home() {
         </div>
       </header>
 
+      {/* Visual Notification Banner for Active Deliveries */}
+      <div className="bg-amber-500 text-white px-4 py-2 text-center text-xs sm:text-sm font-medium flex items-center justify-center gap-2 shadow-inner">
+        <span className="animate-pulse">🚚</span>
+        <span><strong>Alerte Livraison Bangui :</strong> Vos commandes « En cours de livraison » sont acheminées en direct par nos coursiers vers votre secteur ! Suivez la progression dans votre Espace Client.</span>
+      </div>
+
       {/* Hero Section */}
       <section className="relative bg-gradient-to-b from-[#FEF3C7]/60 to-[#FDFBF7] py-16 px-6 border-b border-[#EADBC8]">
         <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-center">

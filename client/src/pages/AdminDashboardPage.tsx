@@ -24,7 +24,19 @@ export default function AdminDashboardPage() {
   const { data: products = [] } = trpc.shop.getProducts.useQuery();
 
   const updateStatusMutation = trpc.shop.updateOrderStatus.useMutation();
+  const deleteOrderMutation = trpc.shop.deleteOrder.useMutation();
   const processReturnMutation = trpc.shop.processReturn.useMutation();
+
+  const handleDeleteOrder = async (orderId: number) => {
+    if (!confirm(`Êtes-vous sûr de vouloir supprimer/annuler la commande #${orderId} (faux client / test) ?`)) return;
+    try {
+      await deleteOrderMutation.mutateAsync({ orderId });
+      toast.success(`Commande #${orderId} supprimée avec succès.`);
+      utils.shop.getAllOrders.invalidate();
+    } catch {
+      toast.error("Erreur lors de la suppression de la commande.");
+    }
+  };
   const addProductMutation = trpc.shop.addProduct.useMutation();
   const updateStockMutation = trpc.shop.updateStock.useMutation();
   const addZoneMutation = trpc.shop.addDeliveryZone.useMutation();
@@ -280,7 +292,7 @@ export default function AdminDashboardPage() {
                         value={ord.status}
                         onValueChange={(val: any) => handleUpdateOrderStatus(ord.id, val)}
                       >
-                        <SelectTrigger className="w-56 text-xs sm:text-sm font-medium">
+                        <SelectTrigger className="w-44 sm:w-48 text-xs sm:text-sm font-medium">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -290,6 +302,15 @@ export default function AdminDashboardPage() {
                           <SelectItem value="Livrée">Livrée</SelectItem>
                         </SelectContent>
                       </Select>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        className="text-xs h-9 px-2"
+                        title="Supprimer la commande (Faux client)"
+                        onClick={() => handleDeleteOrder(ord.id)}
+                      >
+                        🗑️ Supprimer
+                      </Button>
                     </div>
                   </CardHeader>
                   <CardContent className="pt-4 space-y-2 text-sm">
