@@ -203,6 +203,23 @@ export default function CustomerAccountPage() {
                             <p className="text-[10px] text-green-700 font-semibold">Arrivée estimée : 15 - 25 minutes</p>
                           </div>
                         </div>
+
+                        {ord.status === 'Livrée' && (
+                          <div className="p-3 bg-white rounded-lg border border-[#EADBC8] flex items-center justify-between">
+                            <span className="text-xs font-medium text-[#1E3F20]">Noter le livreur Jean-Marc :</span>
+                            <div className="flex gap-1">
+                              {[1, 2, 3, 4, 5].map(star => (
+                                <button
+                                  key={star}
+                                  onClick={() => toast.success(`Merci ! Note de ${star}/5 étoiles enregistrée pour le livreur.`)}
+                                  className="text-amber-500 hover:scale-125 transition text-lg"
+                                >
+                                  ★
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </CardContent>
                   </Card>

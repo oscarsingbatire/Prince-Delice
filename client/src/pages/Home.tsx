@@ -22,6 +22,7 @@ export default function Home() {
   const [selectedCategory, setSelectedCategory] = useState("Tous");
   const [lang, setLang] = useState<"fr" | "sg">("fr");
   const [currency, setCurrency] = useState<"XAF" | "EUR">("XAF");
+  const [darkMode, setDarkMode] = useState(false);
 
   const subscribePushMutation = trpc.shop.subscribePush.useMutation();
 
@@ -147,6 +148,20 @@ export default function Home() {
             title="Activer les notifications push"
           >
             🔔 Push
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setDarkMode(!darkMode);
+              document.documentElement.classList.toggle("dark", !darkMode);
+              toast.success(!darkMode ? "Mode Sombre activé" : "Mode Clair activé");
+            }}
+            className="border-[#EADBC8] text-[#1E3F20] text-xs h-8 px-2"
+            title="Basculer le mode sombre / clair"
+          >
+            {darkMode ? "☀️" : "🌙"}
           </Button>
         </div>
 
@@ -357,6 +372,32 @@ export default function Home() {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Monthly Subscription: Panier Fraîcheur */}
+      <section className="py-16 px-6 bg-[#FEF3C7]/30 border-t border-[#EADBC8]">
+        <div className="max-w-4xl mx-auto bg-white p-8 rounded-2xl border border-[#D97706]/40 shadow-sm text-center space-y-6">
+          <Badge className="bg-[#D97706] text-white px-3 py-1 text-xs">Nouveau : Abonnement Bangui</Badge>
+          <h2 className="text-3xl font-serif font-bold text-[#1E3F20]">Abonnement Mensuel "Panier Fraîcheur"</h2>
+          <p className="text-muted-foreground text-sm max-w-lg mx-auto">
+            Recevez chaque semaine un panier assorti de fruits de saison fraîchement cueillis (Mangues, Ananas, Papayes, Bananes) livrés directement chez vous à Bangui sans frais de livraison supplémentaires.
+          </p>
+          <div className="flex flex-col sm:flex-row justify-center items-center gap-4 pt-2">
+            <span className="font-serif text-2xl font-bold text-[#1E3F20]">15 000 XAF <span className="text-xs text-muted-foreground font-normal">/ mois (4 livraisons)</span></span>
+            <Button
+              onClick={() => {
+                if (!isAuthenticated) {
+                  startLogin();
+                  return;
+                }
+                toast.success("Abonnement 'Panier Fraîcheur' activé avec succès ! Notre équipe vous contactera pour planifier la première livraison.");
+              }}
+              className="bg-[#D97706] hover:bg-[#b45309] text-white px-6 py-2.5"
+            >
+              S'abonner maintenant
+            </Button>
           </div>
         </div>
       </section>
