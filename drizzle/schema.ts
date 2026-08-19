@@ -150,3 +150,17 @@ export const smsGatewayLogs = mysqlTable("smsGatewayLogs", {
 
 export type UserLoyalty = typeof userLoyalty.$inferSelect;
 export type SmsGatewayLog = typeof smsGatewayLogs.$inferSelect;
+
+export const drivers = mysqlTable("drivers", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 100 }).notNull(),
+  phone: varchar("phone", { length: 32 }).notNull(),
+  vehicle: varchar("vehicle", { length: 50 }).default("Moto Honda").notNull(),
+  arrondissement: varchar("arrondissement", { length: 100 }).default("3e Arrondissement").notNull(),
+  status: mysqlEnum("status", ["Disponible", "En tournée", "De retour"]).default("Disponible").notNull(),
+  currentLocation: varchar("currentLocation", { length: 100 }).default("Dépôt PK0 / Centre").notNull(),
+  assignedOrderId: int("assignedOrderId"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type Driver = typeof drivers.$inferSelect;

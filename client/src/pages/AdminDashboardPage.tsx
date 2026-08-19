@@ -43,6 +43,56 @@ export default function AdminDashboardPage() {
   const [zoneFee, setZoneFee] = useState("1000");
   const [zoneTime, setZoneTime] = useState("30-45 min");
 
+  // Driver management state
+  const { data: drivers = [] } = trpc.shop.getDrivers.useQuery(undefined, { enabled: isAuthenticated && user?.role === 'admin' });
+  const addDriverMutation = trpc.shop.addDriver.useMutation();
+  const assignDriverMutation = trpc.shop.assignDriver.useMutation();
+  const updateDriverStatusMutation = trpc.shop.updateDriverStatus.useMutation();
+
+  const [driverName, setDriverName] = useState("");
+  const [driverPhone, setDriverPhone] = useState("");
+  const [driverVehicle, setDriverVehicle] = useState("Moto Honda");
+  const [driverArrond, setDriverArrond] = useState("3e Arrondissement");
+
+  const handleAddDriver = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await addDriverMutation.mutateAsync({
+        name: driverName,
+        phone: driverPhone,
+        vehicle: driverVehicle,
+        arrondissement: driverArrond,
+      });
+      toast.success("Livreur inscrit avec succès !");
+      setDriverName("");
+      setDriverPhone("");
+      utils.shop.getDrivers.invalidate();
+    } catch {
+      toast.error("Erreur lors de l'inscription du livreur.");
+    }
+  };
+
+  const handleAssignDriver = async (driverId: number, orderId: number) => {
+    try {
+      await assignDriverMutation.mutateAsync({ driverId, orderId });
+      toast.success(`Commande #${orderId} assignée au livreur avec succès !`);
+      utils.shop.getDrivers.invalidate();
+      utils.shop.getAllOrders.invalidate();
+    } catch {
+      toast.error("Erreur lors de l'assignation.");
+    }
+  };
+
+  const handleUpdateDriverStatus = async (driverId: number, status: "Disponible" | "En tournée" | "De retour", currentLocation: string) => {
+    try {
+      await updateDriverStatusMutation.mutateAsync({ driverId, status, currentLocation });
+      toast.success(`Statut du livreur mis à jour : ${status}`);
+      utils.shop.getDrivers.invalidate();
+    } catch {
+      toast.error("Erreur lors de la mise à jour du statut.");
+    }
+  };
+
   if (!isAuthenticated || user?.role !== 'admin') {
     return (
       <div className="min-h-screen bg-[#FDFBF7] text-[#2C221E] flex flex-col items-center justify-center p-6">
@@ -206,7 +256,8 @@ export default function AdminDashboardPage() {
             <TabsTrigger value="orders">Commandes</TabsTrigger>
             <TabsTrigger value="stocks">Catalogue & Stocks</TabsTrigger>
             <TabsTrigger value="returns">Retours & Réclamations</TabsTrigger>
-            <TabsTrigger value="delivery">Livraisons</TabsTrigger>
+            <TabsTrigger value="delivery">Zones de Livraison</TabsTrigger>
+            <TabsTrigger value="drivers">Équipe & Suivi Livreurs</TabsTrigger>
             <TabsTrigger value="reports">Rapports de Vente</TabsTrigger>
           </TabsList>
 
@@ -445,6 +496,150 @@ export default function AdminDashboardPage() {
                       Ajouter la zone
                     </Button>
                   </form>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          {/* 5. Drivers & Live Tracking Management */}
+          <TabsContent value="drivers" className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              {/* Register Driver Form */}
+              <Card className="border-[#EADBC8] bg-white shadow-sm lg:col-span-1">
+                <CardHeader>
+                  <CardTitle className="font-serif text-lg text-[#1E3F20] flex items-center gap-2">
+                    <Truck className="w-5 h-5 text-[#D97706]" /> Inscrire un Livreur
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <form onSubmit={handleAddDriver} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label>Nom et Prénom du Livreur</Label>
+                      <Input value={driverName} onChange={e => setDriverName(e.target.value)} required placeholder="Ex: Jean-Marc Sango" />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Téléphone (Bangui)</Label>
+                      <Input value={driverPhone} onChange={e => setDriverPhone(e.target.value)} required placeholder="+236 72 89 89 38" />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Véhicule</Label>
+                      <Select value={driverVehicle} onValueChange={setDriverVehicle}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Moto Honda CG">Moto Honda CG</SelectItem>
+                          <SelectItem value="Scooter Yamaha">Scooter Yamaha</SelectItem>
+                          <SelectItem value="Vélo Cargo">Vélo Cargo</SelectItem>
+                          <SelectItem value="Voiture Livraisons">Voiture Livraisons</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Arrondissement Assigné</Label>
+                      <Select value={driverArrond} onValueChange={setDriverArrond}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="1er Arrondissement">1er Arrondissement</SelectItem>
+                          <SelectItem value="2e Arrondissement">2e Arrondissement</SelectItem>
+                          <SelectItem value="3e Arrondissement">3e Arrondissement</SelectItem>
+                          <SelectItem value="4e Arrondissement">4e Arrondissement</SelectItem>
+                          <SelectItem value="5e Arrondissement">5e Arrondissement</SelectItem>
+                          <SelectItem value="6e Arrondissement">6e Arrondissement</SelectItem>
+                          <SelectItem value="7e Arrondissement">7e Arrondissement</SelectItem>
+                          <SelectItem value="8e Arrondissement">8e Arrondissement</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <Button type="submit" className="w-full bg-[#1E3F20] hover:bg-[#152e17] text-white">
+                      Enregistrer le livreur
+                    </Button>
+                  </form>
+                </CardContent>
+              </Card>
+
+              {/* Drivers Live Tour & Assignment Panel */}
+              <Card className="border-[#EADBC8] bg-white shadow-sm lg:col-span-2">
+                <CardHeader>
+                  <CardTitle className="font-serif text-lg text-[#1E3F20]">Équipe de Livraison & Suivi en Direct (Bangui)</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {drivers.length === 0 ? (
+                    <div className="text-center py-10 text-muted-foreground text-sm">
+                      Aucun livreur enregistré pour le moment. Utilisez le formulaire pour ajouter votre premier coursier.
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {drivers.map(driver => (
+                        <div key={driver.id} className="p-4 bg-[#FDFBF7] rounded-xl border border-[#EADBC8] space-y-3">
+                          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className="font-bold text-[#1E3F20] text-base">{driver.name}</span>
+                                <Badge className={
+                                  driver.status === 'Disponible' ? 'bg-green-100 text-green-800' :
+                                  driver.status === 'En tournée' ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800'
+                                }>
+                                  {driver.status}
+                                </Badge>
+                              </div>
+                              <p className="text-xs text-muted-foreground mt-0.5">📞 {driver.phone} • {driver.vehicle} • Secteur : {driver.arrondissement}</p>
+                              <p className="text-xs text-green-700 font-medium mt-1">📍 Position GPS : {driver.currentLocation}</p>
+                            </div>
+
+                            <div className="flex items-center gap-2 flex-wrap">
+                              {/* Status update buttons */}
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleUpdateDriverStatus(driver.id, 'Disponible', 'Dépôt PK0 / Centre (Prêt)')}
+                                className="text-xs h-7 border-green-600 text-green-700 hover:bg-green-50"
+                              >
+                                Dispo au Dépôt
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleUpdateDriverStatus(driver.id, 'De retour', 'Retour de tournée validé • Dépôt PK0')}
+                                className="text-xs h-7 border-blue-600 text-blue-700 hover:bg-blue-50"
+                              >
+                                Valider Retour
+                              </Button>
+                            </div>
+                          </div>
+
+                          {/* Order Assignment Selector */}
+                          <div className="pt-2 border-t border-[#EADBC8] flex flex-col sm:flex-row items-center justify-between gap-3">
+                            <span className="text-xs font-medium text-[#1E3F20]">
+                              {driver.assignedOrderId ? `Commande active assignée : #${driver.assignedOrderId}` : 'Aucune commande assignée'}
+                            </span>
+                            <div className="flex items-center gap-2 w-full sm:w-auto">
+                              <Select
+                                onValueChange={(ordId) => handleAssignDriver(driver.id, Number(ordId))}
+                              >
+                                <SelectTrigger className="w-full sm:w-48 text-xs h-8">
+                                  <SelectValue placeholder="Assigner une commande..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {orders.filter(o => o.status !== 'Livrée').map(o => (
+                                    <SelectItem key={o.id} value={o.id.toString()}>
+                                      Cmd #{o.id} - {o.customerName} ({o.arrondissement})
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </div>

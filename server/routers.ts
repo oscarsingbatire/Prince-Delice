@@ -4,7 +4,7 @@ import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { products, deliveryZones, orders, orderItems, returns, users, reviews, salesReports, referrals, pushSubscriptions, userLoyalty, smsGatewayLogs } from "../drizzle/schema";
+import { products, deliveryZones, orders, orderItems, returns, users, reviews, salesReports, referrals, pushSubscriptions, userLoyalty, smsGatewayLogs, drivers } from "../drizzle/schema";
 import { eq, desc } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 
@@ -573,6 +573,71 @@ export const appRouter = router({
       if (!db) return [];
       return await db.select().from(smsGatewayLogs).orderBy(desc(smsGatewayLogs.createdAt)).limit(50);
     }),
+
+    getDrivers: adminProcedure.query(async () => {
+      const db = await getDb();
+      if (!db) return [];
+      return await db.select().from(drivers).orderBy(desc(drivers.createdAt));
+    }),
+
+    addDriver: adminProcedure
+      .input(z.object({
+        name: z.string().min(2),
+        phone: z.string().min(8),
+        vehicle: z.string(),
+        arrondissement: z.string(),
+      }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
+        await db.insert(drivers).values({
+          name: input.name,
+          phone: input.phone,
+          vehicle: input.vehicle,
+          arrondissement: input.arrondissement,
+          status: 'Disponible',
+          currentLocation: 'Dépôt PK0 / Centre (Prêt)',
+        });
+        return { success: true };
+      }),
+
+    assignDriver: adminProcedure
+      .input(z.object({
+        driverId: z.number(),
+        orderId: z.number(),
+      }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
+        // Update driver status & assigned order
+        await db.update(drivers)
+          .set({ status: 'En tournée', assignedOrderId: input.orderId, currentLocation: 'En route vers client (Bangui)' })
+          .where(eq(drivers.id, input.driverId));
+        // Update order status
+        await db.update(orders)
+          .set({ status: 'En cours de livraison' })
+          .where(eq(orders.id, input.orderId));
+        return { success: true };
+      }),
+
+    updateDriverStatus: adminProcedure
+      .input(z.object({
+        driverId: z.number(),
+        status: z.enum(["Disponible", "En tournée", "De retour"]),
+        currentLocation: z.string(),
+      }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
+        await db.update(drivers)
+          .set({
+            status: input.status,
+            currentLocation: input.currentLocation,
+            ...(input.status === 'Disponible' || input.status === 'De retour' ? { assignedOrderId: null } : {}),
+          })
+          .where(eq(drivers.id, input.driverId));
+        return { success: true };
+      }),
   }),
 });
 
