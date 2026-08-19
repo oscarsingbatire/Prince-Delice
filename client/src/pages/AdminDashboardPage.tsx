@@ -295,47 +295,55 @@ export default function AdminDashboardPage() {
             <div className="space-y-4">
               {orders.map(ord => (
                 <Card key={ord.id} className="border-[#EADBC8] bg-white shadow-sm">
-                  <CardHeader className="pb-3 border-b border-[#EADBC8] flex flex-row items-center justify-between">
-                    <div>
-                      <CardTitle className="font-serif text-lg text-[#1E3F20]">Commande #{ord.id} - {ord.customerName} ({ord.customerPhone})</CardTitle>
-                      <p className="text-xs text-muted-foreground">{ord.arrondissement}, {ord.neighborhood} • Paiement: {ord.paymentMethod.toUpperCase()}</p>
+                  <CardHeader className="pb-3 border-b border-[#EADBC8] space-y-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div>
+                        <CardTitle className="font-serif text-lg text-[#1E3F20]">Commande #{ord.id} - {ord.customerName} ({ord.customerPhone})</CardTitle>
+                        <p className="text-xs text-muted-foreground">{ord.arrondissement}, {ord.neighborhood} • Paiement: {ord.paymentMethod.toUpperCase()}</p>
+                      </div>
+                      <div className="w-full sm:w-auto">
+                        <label className="text-xs font-semibold text-[#1E3F20] block mb-1">Statut de Livraison :</label>
+                        <Select
+                          value={ord.status}
+                          onValueChange={(val: any) => handleUpdateOrderStatus(ord.id, val)}
+                        >
+                          <SelectTrigger className="w-full sm:w-56 text-xs sm:text-sm font-medium bg-[#FEF3C7]/40 border-[#EADBC8]">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Validée">Validée</SelectItem>
+                            <SelectItem value="En préparation">En préparation</SelectItem>
+                            <SelectItem value="En cours de livraison">En cours de livraison</SelectItem>
+                            <SelectItem value="Livrée">Livrée</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <Select
-                        value={ord.status}
-                        onValueChange={(val: any) => handleUpdateOrderStatus(ord.id, val)}
-                      >
-                        <SelectTrigger className="w-44 sm:w-48 text-xs sm:text-sm font-medium">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Validée">Validée</SelectItem>
-                          <SelectItem value="En préparation">En préparation</SelectItem>
-                          <SelectItem value="En cours de livraison">En cours de livraison</SelectItem>
-                          <SelectItem value="Livrée">Livrée</SelectItem>
-                        </SelectContent>
-                      </Select>
+                  </CardHeader>
+                  <CardContent className="pt-4 space-y-4 text-sm">
+                    <div className="space-y-2">
+                      {ord.items.map(item => (
+                        <div key={item.id} className="flex justify-between">
+                          <span className="text-muted-foreground">{item.productName} (x{item.quantity})</span>
+                          <span className="font-medium">{(Number(item.price) * item.quantity).toLocaleString()} XAF</span>
+                        </div>
+                      ))}
+                      <div className="border-t border-[#EADBC8] pt-2 flex justify-between font-serif font-bold text-[#1E3F20]">
+                        <span>Total</span>
+                        <span>{Number(ord.totalAmount).toLocaleString()} XAF</span>
+                      </div>
+                    </div>
+
+                    <div className="border-t border-dashed border-[#EADBC8] pt-3 flex justify-end">
                       <Button
                         size="sm"
                         variant="destructive"
-                        className="text-xs h-9 px-2"
+                        className="text-xs h-9 px-4 gap-1.5"
                         title="Supprimer la commande (Faux client)"
                         onClick={() => setOrderToDelete(ord.id)}
                       >
-                        🗑️ Supprimer
+                        🗑️ Supprimer / Annuler cette commande
                       </Button>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="pt-4 space-y-2 text-sm">
-                    {ord.items.map(item => (
-                      <div key={item.id} className="flex justify-between">
-                        <span className="text-muted-foreground">{item.productName} (x{item.quantity})</span>
-                        <span className="font-medium">{(Number(item.price) * item.quantity).toLocaleString()} XAF</span>
-                      </div>
-                    ))}
-                    <div className="border-t border-[#EADBC8] pt-2 flex justify-between font-serif font-bold text-[#1E3F20]">
-                      <span>Total</span>
-                      <span>{Number(ord.totalAmount).toLocaleString()} XAF</span>
                     </div>
                   </CardContent>
                 </Card>
