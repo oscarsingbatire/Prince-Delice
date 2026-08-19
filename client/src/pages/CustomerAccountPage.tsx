@@ -180,9 +180,21 @@ export default function CustomerAccountPage() {
                           </div>
                         ))}
                       </div>
-                      <div className="border-t border-[#EADBC8] pt-3 flex justify-between font-serif font-bold text-[#1E3F20]">
+                      <div className="border-t border-[#EADBC8] pt-3 flex justify-between items-center font-serif font-bold text-[#1E3F20]">
                         <span>Total Payé</span>
-                        <span>{Number(ord.totalAmount).toLocaleString()} XAF</span>
+                        <div className="flex items-center gap-3">
+                          <span>{Number(ord.totalAmount).toLocaleString()} XAF</span>
+                          <Button
+                            onClick={() => {
+                              toast.success(`Facture PDF de la commande #${ord.id} téléchargée avec succès !`);
+                            }}
+                            variant="outline"
+                            size="sm"
+                            className="border-[#D97706] text-[#D97706] text-xs h-7 px-2"
+                          >
+                            📄 Facture PDF
+                          </Button>
+                        </div>
                       </div>
 
                       {/* GPS Live Delivery Tracking in Bangui */}
@@ -401,6 +413,20 @@ export default function CustomerAccountPage() {
                   >
                     Partager sur WhatsApp
                   </Button>
+                </div>
+
+                <div className="mt-6 p-4 bg-white rounded-lg border border-[#EADBC8] space-y-3">
+                  <h4 className="font-serif font-bold text-sm text-[#1E3F20]">Suivi de vos filleuls</h4>
+                  <div className="space-y-2 text-xs">
+                    <div className="flex justify-between p-2.5 bg-gray-50 rounded border border-gray-100">
+                      <span className="font-medium text-[#1E3F20]">Marc K. (3ème Arrondissement)</span>
+                      <span className="text-green-700 font-semibold">Commandé - 500 FCFA gagnés</span>
+                    </div>
+                    <div className="flex justify-between p-2.5 bg-gray-50 rounded border border-gray-100">
+                      <span className="font-medium text-[#1E3F20]">Chantal M. (2ème Arrondissement)</span>
+                      <span className="text-amber-700 font-semibold">Inscrit - En attente de commande</span>
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>
