@@ -26,6 +26,24 @@ export default function Home() {
   const [chatOpen, setChatOpen] = useState(false);
   const [chatMessages, setChatMessages] = useState<{ sender: 'user' | 'agent'; text: string }[]>([]);
   const [chatInput, setChatInput] = useState('');
+  const [detectedNeighborhood, setDetectedNeighborhood] = useState<string | null>(null);
+
+  const detectLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        () => {
+          // Simulated geocoding in Bangui (e.g. 3ème Arrondissement / PK5)
+          setDetectedNeighborhood("3ème Arrondissement (Secteur PK5 - Bangui)");
+          toast.success("Position GPS détectée : 3ème Arrondissement (Livraison prioritaire disponible !)");
+        },
+        () => {
+          toast.error("Impossible de détecter la position GPS.");
+        }
+      );
+    } else {
+      toast.error("La géolocalisation n'est pas supportée par votre navigateur.");
+    }
+  };
 
   const subscribePushMutation = trpc.shop.subscribePush.useMutation();
 
@@ -349,6 +367,26 @@ export default function Home() {
             ))}
           </div>
         )}
+      </section>
+
+      {/* GPS Location & VIP Tiers Banner */}
+      <section className="py-8 px-6 bg-[#FEF3C7]/40 border-b border-[#EADBC8]">
+        <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+          <div className="space-y-1 text-center md:text-left">
+            <h3 className="font-serif font-bold text-lg text-[#1E3F20]">📍 Livraison géolocalisée à Bangui</h3>
+            <p className="text-xs text-muted-foreground">
+              {detectedNeighborhood ? `Arrondissement détecté : ${detectedNeighborhood}` : "Détectez votre position pour un calcul instantané des frais et délais de livraison."}
+            </p>
+          </div>
+          <div className="flex gap-3">
+            <Button onClick={detectLocation} className="bg-[#1E3F20] hover:bg-[#152e17] text-white text-xs">
+              Détecter ma position GPS
+            </Button>
+            <Button onClick={() => toast.success("Statut VIP Actuel : OR (150 points - 10% de réduction sur chaque panier)")} variant="outline" className="border-[#D97706] text-[#D97706] text-xs">
+              💎 Mon Statut VIP
+            </Button>
+          </div>
+        </div>
       </section>
 
       {/* Nutritional Comparison Section */}
