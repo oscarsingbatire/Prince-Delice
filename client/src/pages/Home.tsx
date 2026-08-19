@@ -165,7 +165,7 @@ export default function Home() {
             variant="outline"
             size="sm"
             onClick={handlePushSubscribe}
-            className="border-[#EADBC8] text-[#1E3F20] text-xs h-8 px-2 hidden sm:flex items-center gap-1"
+            className="border-[#EADBC8] text-[#1E3F20] text-xs h-8 px-2 flex items-center gap-1"
             title="Activer les notifications push"
           >
             🔔 Push
