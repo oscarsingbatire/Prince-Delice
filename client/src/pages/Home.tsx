@@ -128,9 +128,9 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-[#FDFBF7] text-[#2C221E] flex flex-col font-sans">
       {/* Top Navbar */}
-      <header className="border-b border-[#EADBC8] bg-white/95 backdrop-blur sticky top-0 z-50 px-3 md:px-6 py-3 flex items-center justify-between gap-2">
-        <Link href="/" className="flex items-center gap-2 font-serif text-lg md:text-2xl font-bold tracking-tight text-[#1E3F20] min-w-0">
-          <img src="/manus-storage/Screenshot_20260813-194645_c6926745.png" alt="Prince Délice" className="w-9 h-9 md:w-11 md:h-11 rounded-full object-cover border border-[#D97706] shadow-sm flex-shrink-0" />
+      <header className="border-b border-[#EADBC8] bg-white/95 backdrop-blur sticky top-0 z-50 px-2 md:px-6 py-2.5 flex items-center justify-between gap-1 flex-wrap sm:flex-nowrap">
+        <Link href="/" className="flex items-center gap-1.5 font-serif text-base md:text-2xl font-bold tracking-tight text-[#1E3F20] min-w-0 flex-shrink-0">
+          <img src="/manus-storage/Screenshot_20260813-194645_c6926745.png" alt="Prince Délice" className="w-8 h-8 md:w-11 md:h-11 rounded-full object-cover border border-[#D97706] shadow-sm flex-shrink-0" />
           <span className="truncate">Prince Délice</span>
         </Link>
 
@@ -527,12 +527,24 @@ export default function Home() {
               type="email"
               required
               placeholder="Votre adresse email..."
-              className="px-4 py-3 rounded-lg text-gray-900 text-sm flex-1 focus:outline-none"
+              className="px-4 py-3 rounded-lg bg-white/10 text-white placeholder-gray-200 border border-white/30 text-sm flex-1 focus:outline-none focus:ring-2 focus:ring-[#D97706]"
             />
             <Button type="submit" className="bg-[#D97706] hover:bg-[#b45309] text-white font-semibold px-6">
               S'inscrire
             </Button>
           </form>
+
+          <div className="pt-4 flex justify-center">
+            <Button
+              onClick={() => {
+                toast.success("Application PWA Prince Délice prête pour installation ! Ajoutez-la à votre écran d'accueil depuis le menu de votre navigateur.");
+              }}
+              variant="outline"
+              className="border-white/40 text-white hover:bg-white/10 text-xs gap-2"
+            >
+              📱 Installer l'application PWA
+            </Button>
+          </div>
         </div>
       </section>
 

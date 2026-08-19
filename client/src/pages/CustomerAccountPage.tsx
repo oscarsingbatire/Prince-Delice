@@ -201,18 +201,28 @@ export default function CustomerAccountPage() {
                       <div className="mt-4 p-4 bg-[#FDFBF7] rounded-xl border border-[#EADBC8] space-y-3">
                         <div className="flex justify-between items-center">
                           <span className="font-serif font-bold text-sm text-[#1E3F20] flex items-center gap-1.5">
-                            <span className="w-2.5 h-2.5 rounded-full bg-green-600 animate-ping" /> Suivi GPS en direct (Bangui)
+                            <span className={`w-2.5 h-2.5 rounded-full ${ord.status === 'Livrée' ? 'bg-green-600' : 'bg-amber-500 animate-ping'}`} />
+                            {ord.status === 'Livrée' ? 'Commande Livrée' : 'Suivi GPS en direct (Bangui)'}
                           </span>
-                          <span className="text-xs bg-amber-100 text-amber-800 px-2 py-0.5 rounded font-medium">
-                            {ord.status === 'Livrée' ? 'Livré avec succès' : 'Livreur en route vers ' + ord.neighborhood}
+                          <span className={`text-xs px-2.5 py-0.5 rounded font-semibold ${ord.status === 'Livrée' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'}`}>
+                            {ord.status === 'Livrée' ? '✅ Livré avec succès à votre porte' : '🛵 Livreur en route vers ' + ord.neighborhood}
                           </span>
                         </div>
                         <div className="relative h-44 bg-[#1E3F20]/10 rounded-lg overflow-hidden border border-[#EADBC8] flex flex-col items-center justify-center p-4 text-center">
                           <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#1E3F20_1px,transparent_1px)] [background-size:16px_16px]" />
                           <div className="z-10 bg-white p-3 rounded-xl shadow-md border border-[#EADBC8] max-w-xs space-y-1">
-                            <p className="text-xs font-bold text-[#1E3F20]">🛵 Livreur Prince Délice : Jean-Marc</p>
-                            <p className="text-[11px] text-muted-foreground">Position actuelle : Rond-point PK0 / {ord.arrondissement}</p>
-                            <p className="text-[10px] text-green-700 font-semibold">Arrivée estimée : 15 - 25 minutes</p>
+                            {ord.status === 'Livrée' ? (
+                              <>
+                                <p className="text-xs font-bold text-green-700">🎉 Livraison effectuée avec succès !</p>
+                                <p className="text-[11px] text-muted-foreground">Livreur : Jean-Marc • {ord.arrondissement}</p>
+                              </>
+                            ) : (
+                              <>
+                                <p className="text-xs font-bold text-[#1E3F20]">🛵 Livreur Prince Délice : Jean-Marc</p>
+                                <p className="text-[11px] text-muted-foreground">Position actuelle : Rond-point PK0 / {ord.arrondissement}</p>
+                                <p className="text-[10px] text-green-700 font-semibold">Arrivée estimée : 15 - 25 minutes</p>
+                              </>
+                            )}
                           </div>
                         </div>
 
@@ -461,9 +471,9 @@ export default function CustomerAccountPage() {
                           <SelectTrigger id="method">
                             <SelectValue />
                           </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="app">Application d'authentification (Google Authenticator / TOTP)</SelectItem>
-                            <SelectItem value="sms">Code PIN par SMS</SelectItem>
+                          <SelectContent className="max-w-xs">
+                            <SelectItem value="app" className="text-xs sm:text-sm whitespace-normal py-2">Application d'authentification (Google Authenticator / TOTP)</SelectItem>
+                            <SelectItem value="sms" className="text-xs sm:text-sm whitespace-normal py-2">Code PIN par SMS</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
