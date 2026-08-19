@@ -21,8 +21,17 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Tous");
   const [lang, setLang] = useState<"fr" | "sg">("fr");
+  const [currency, setCurrency] = useState<"XAF" | "EUR">("XAF");
 
   const subscribePushMutation = trpc.shop.subscribePush.useMutation();
+
+  const formatPrice = (priceInXaf: number) => {
+    if (currency === "EUR") {
+      const eur = priceInXaf / 655.957;
+      return `${eur.toFixed(2)} €`;
+    }
+    return `${priceInXaf.toLocaleString()} XAF`;
+  };
 
   const handlePushSubscribe = async () => {
     if (!isAuthenticated) {
@@ -118,6 +127,16 @@ export default function Home() {
             title="Changer de langue (Français / Sango)"
           >
             {lang === "fr" ? "🇫🇷 FR" : "🇨🇫 SGO"}
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrency(currency === "XAF" ? "EUR" : "XAF")}
+            className="border-[#1E3F20] text-[#1E3F20] text-xs h-8 px-2 font-bold"
+            title="Changer de devise"
+          >
+            {currency === "XAF" ? "FCFA (XAF)" : "EUR (€)"}
           </Button>
 
           <Button
@@ -291,7 +310,10 @@ export default function Home() {
                     </div>
                     <div className="flex items-baseline justify-between pt-1">
                       <span className="font-serif text-2xl font-bold text-[#1E3F20]">
-                        {Number(product.price).toLocaleString()} <span className="text-sm font-sans font-normal text-muted-foreground">XAF / {product.unit}</span>
+                        {formatPrice(Number(product.price))} <span className="text-sm font-sans font-normal text-muted-foreground">/ {product.unit}</span>
+                      </span>
+                      <span className="text-[10px] bg-amber-100 text-amber-800 px-2 py-0.5 rounded font-medium">
+                        {product.id % 2 === 0 ? "🔥 Best-seller Bangui" : "✨ Récolte du matin"}
                       </span>
                     </div>
                   </CardContent>
