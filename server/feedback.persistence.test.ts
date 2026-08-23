@@ -52,6 +52,7 @@ function createContext(role: "user" | "admin" = "user"): TrpcContext {
       name: "Client Persistence",
       loginMethod: "manus",
       role,
+      dataOrigin: "live",
       mfaEnabled: true,
       mfaSecret: "secret123",
       mfaMethod: "app",
@@ -74,7 +75,7 @@ describe("Feedback persistence success paths", () => {
 
   it("persists a delivered-order review with its driver", async () => {
     const caller = appRouter.createCaller(createContext("user"));
-    const result = await caller.shop.submitDeliveryReview({ orderId: 42, rating: 5, comment: "Livraison rapide et fruits très frais." });
+    const result = await caller.shop.submitDeliveryReview({ orderId: 42, rating: 5, comment: "automated-test-payload" });
 
     expect(result).toEqual({ success: true });
     expect(inserted[0]?.values).toMatchObject({ orderId: 42, userId: 1, driverId: 7, rating: 5, status: "Nouveau" });
@@ -123,9 +124,9 @@ describe("Feedback persistence success paths", () => {
   });
 
   it("returns client notifications and matches multi-criteria searches", () => {
-    const notification = getFeedbackNotification([{ id: "support-1", updatedAt: new Date("2026-08-23T10:00:00Z"), status: "Traité", adminReply: "Réponse" }]);
+    const notification = getFeedbackNotification([{ id: "support-live-1", updatedAt: new Date("2026-08-23T10:00:00Z"), status: "Traité", adminReply: "Réponse" }]);
     expect(notification).toContain("répondu");
-    expect(matchesFeedbackSearch("Oscar Singbatire +23675000000 commande 42", "75000000")).toBe(true);
-    expect(matchesFeedbackSearch("Oscar Singbatire commande 42", "inexistant")).toBe(false);
+    expect(matchesFeedbackSearch("client-reel +23675000000 commande 42", "75000000")).toBe(true);
+    expect(matchesFeedbackSearch("client-reel commande 42", "inexistant")).toBe(false);
   });
 });

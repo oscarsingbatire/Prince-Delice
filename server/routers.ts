@@ -79,7 +79,10 @@ export const appRouter = router({
       return await db.select().from(drivers).where(eq(drivers.status, "Disponible"));
     }),
 
-    seedInitialData: publicProcedure.mutation(async () => {
+    // Initialisation strictement limitée au catalogue et aux zones : le champ customerData est interdit.
+    seedInitialData: publicProcedure
+      .input(z.object({ customerData: z.never().optional() }).optional())
+      .mutation(async () => {
       const db = await getDb();
       if (!db) return { success: false };
 
@@ -239,8 +242,9 @@ export const appRouter = router({
         const db = await getDb();
         if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
 
-        const [orderResult] = await db.insert(orders).values({
+        const [orderResult] =         await db.insert(orders).values({
           userId: ctx.user.id,
+          dataOrigin: "live",
           customerName: input.customerName,
           customerPhone: input.customerPhone,
           deliveryAddress: input.deliveryAddress,
@@ -288,7 +292,7 @@ export const appRouter = router({
     getUserOrders: protectedProcedure.query(async ({ ctx }) => {
       const db = await getDb();
       if (!db) return [];
-      const userOrders = await db.select().from(orders).where(eq(orders.userId, ctx.user.id)).orderBy(desc(orders.createdAt));
+      const userOrders = await db.select().from(orders).where(and(eq(orders.userId, ctx.user.id), eq(orders.dataOrigin, "live"))).orderBy(desc(orders.createdAt));
       const result = [];
       for (const ord of userOrders) {
         const items = await db.select().from(orderItems).where(eq(orderItems.orderId, ord.id));
@@ -313,6 +317,7 @@ export const appRouter = router({
         await db.insert(returns).values({
           orderId: input.orderId,
           userId: ctx.user.id,
+          dataOrigin: "live",
           reason: input.reason,
           photoUrl: input.photoUrl,
           status: "En attente",
@@ -323,7 +328,7 @@ export const appRouter = router({
     getUserReturns: protectedProcedure.query(async ({ ctx }) => {
       const db = await getDb();
       if (!db) return [];
-      return await db.select().from(returns).where(eq(returns.userId, ctx.user.id)).orderBy(desc(returns.createdAt));
+      return await db.select().from(returns).where(and(eq(returns.userId, ctx.user.id), eq(returns.dataOrigin, "live"))).orderBy(desc(returns.createdAt));
     }),
 
     submitDeliveryReview: protectedProcedure
@@ -335,7 +340,7 @@ export const appRouter = router({
       .mutation(async ({ ctx, input }) => {
         const db = await getDb();
         if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
-        const [order] = await db.select().from(orders).where(and(eq(orders.id, input.orderId), eq(orders.userId, ctx.user.id))).limit(1);
+        const [order] = await db.select().from(orders).where(and(eq(orders.id, input.orderId), eq(orders.userId, ctx.user.id), eq(orders.dataOrigin, "live"))).limit(1);
         if (!order) throw new TRPCError({ code: 'NOT_FOUND', message: 'Commande introuvable.' });
         if (order.status !== 'Livrée') throw new TRPCError({ code: 'BAD_REQUEST', message: 'La commande doit être livrée avant de laisser un avis.' });
         const existing = await db.select().from(deliveryReviews).where(and(eq(deliveryReviews.orderId, input.orderId), eq(deliveryReviews.userId, ctx.user.id))).limit(1);
@@ -346,6 +351,7 @@ export const appRouter = router({
         await db.insert(deliveryReviews).values({
           orderId: input.orderId,
           userId: ctx.user.id,
+          dataOrigin: "live",
           driverId: order.driverId ?? assignedDriver?.id ?? null,
           userName: ctx.user.name || 'Client Prince Délice',
           rating: input.rating,
@@ -358,13 +364,13 @@ export const appRouter = router({
     getMyDeliveryReviews: protectedProcedure.query(async ({ ctx }) => {
       const db = await getDb();
       if (!db) return [];
-      return await db.select().from(deliveryReviews).where(eq(deliveryReviews.userId, ctx.user.id)).orderBy(desc(deliveryReviews.createdAt));
+      return await db.select().from(deliveryReviews).where(and(eq(deliveryReviews.userId, ctx.user.id), eq(deliveryReviews.dataOrigin, "live"))).orderBy(desc(deliveryReviews.createdAt));
     }),
 
     getAdminDeliveryReviews: adminProcedure.query(async () => {
       const db = await getDb();
       if (!db) return [];
-      return await db.select().from(deliveryReviews).orderBy(desc(deliveryReviews.createdAt));
+      return await db.select().from(deliveryReviews).where(eq(deliveryReviews.dataOrigin, "live")).orderBy(desc(deliveryReviews.createdAt));
     }),
 
     updateDeliveryReviewStatus: adminProcedure
@@ -372,8 +378,8 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         const db = await getDb();
         if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
-        const [review] = await db.select().from(deliveryReviews).where(eq(deliveryReviews.id, input.reviewId)).limit(1);
-        await db.update(deliveryReviews).set({ status: input.status, ...(input.adminNotes !== undefined ? { adminNotes: input.adminNotes || null } : {}), ...(input.adminReply !== undefined ? { adminReply: input.adminReply || null } : {}) }).where(eq(deliveryReviews.id, input.reviewId));
+        const [review] = await db.select().from(deliveryReviews).where(and(eq(deliveryReviews.id, input.reviewId), eq(deliveryReviews.dataOrigin, "live"))).limit(1);
+        await db.update(deliveryReviews).set({ status: input.status, ...(input.adminNotes !== undefined ? { adminNotes: input.adminNotes || null } : {}), ...(input.adminReply !== undefined ? { adminReply: input.adminReply || null } : {})         }).where(and(eq(deliveryReviews.id, input.reviewId), eq(deliveryReviews.dataOrigin, "live")));
         if (review && (input.adminReply?.trim() || input.status !== review.status)) {
           const [customer] = await db.select().from(users).where(eq(users.id, review.userId)).limit(1);
           await queueCustomerNotifications(db, { userId: review.userId, phone: customer?.phone, deliveryReviewId: review.id, message: input.adminReply?.trim() || `Votre avis de livraison est maintenant : ${input.status}.` });
@@ -388,6 +394,7 @@ export const appRouter = router({
         if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
         const requestResult = await db.insert(supportRequests).values({
           userId: ctx.user?.id ?? null,
+          dataOrigin: "live",
           userName: ctx.user?.name || 'Client invité',
           phone: input.phone || ctx.user?.phone || null,
           message: input.message,
@@ -398,6 +405,7 @@ export const appRouter = router({
         if (requestId) {
           await db.insert(supportMessages).values({
             supportRequestId: requestId,
+            dataOrigin: "live",
             senderType: 'client',
             senderId: ctx.user?.id ?? null,
             senderName: ctx.user?.name || 'Client invité',
@@ -410,7 +418,7 @@ export const appRouter = router({
     getSupportRequests: adminProcedure.query(async () => {
       const db = await getDb();
       if (!db) return [];
-      const requests = await db.select().from(supportRequests).orderBy(desc(supportRequests.createdAt));
+      const requests = await db.select().from(supportRequests).where(eq(supportRequests.dataOrigin, "live")).orderBy(desc(supportRequests.createdAt));
       return Promise.all(requests.map(async request => ({
         ...request,
         messages: await db.select().from(supportMessages).where(eq(supportMessages.supportRequestId, request.id)).orderBy(supportMessages.createdAt),
@@ -420,7 +428,7 @@ export const appRouter = router({
     getMySupportRequests: protectedProcedure.query(async ({ ctx }) => {
       const db = await getDb();
       if (!db) return [];
-      const requests = await db.select().from(supportRequests).where(eq(supportRequests.userId, ctx.user.id)).orderBy(desc(supportRequests.createdAt));
+      const requests = await db.select().from(supportRequests).where(and(eq(supportRequests.userId, ctx.user.id), eq(supportRequests.dataOrigin, "live"))).orderBy(desc(supportRequests.createdAt));
       return Promise.all(requests.map(async request => ({
         ...request,
         messages: await db.select().from(supportMessages).where(eq(supportMessages.supportRequestId, request.id)).orderBy(supportMessages.createdAt),
@@ -432,10 +440,11 @@ export const appRouter = router({
       .mutation(async ({ ctx, input }) => {
         const db = await getDb();
         if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
-        const [request] = await db.select().from(supportRequests).where(and(eq(supportRequests.id, input.supportRequestId), eq(supportRequests.userId, ctx.user.id))).limit(1);
+        const [request] = await db.select().from(supportRequests).where(and(eq(supportRequests.id, input.supportRequestId), eq(supportRequests.userId, ctx.user.id), eq(supportRequests.dataOrigin, "live"))).limit(1);
         if (!request) throw new TRPCError({ code: 'NOT_FOUND', message: 'Conversation introuvable.' });
         await db.insert(supportMessages).values({
           supportRequestId: input.supportRequestId,
+          dataOrigin: "live",
           senderType: 'client',
           senderId: ctx.user.id,
           senderName: ctx.user.name || 'Client Prince Délice',
@@ -450,11 +459,12 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         const db = await getDb();
         if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
-        const [request] = await db.select().from(supportRequests).where(eq(supportRequests.id, input.requestId)).limit(1);
-        await db.update(supportRequests).set({ status: input.status, ...(input.adminNotes !== undefined ? { adminNotes: input.adminNotes || null } : {}), ...(input.adminReply !== undefined ? { adminReply: input.adminReply || null } : {}) }).where(eq(supportRequests.id, input.requestId));
+        const [request] = await db.select().from(supportRequests).where(and(eq(supportRequests.id, input.requestId), eq(supportRequests.dataOrigin, "live"))).limit(1);
+        await db.update(supportRequests).set({ status: input.status, ...(input.adminNotes !== undefined ? { adminNotes: input.adminNotes || null } : {}), ...(input.adminReply !== undefined ? { adminReply: input.adminReply || null } : {}) }).where(and(eq(supportRequests.id, input.requestId), eq(supportRequests.dataOrigin, "live")));
         if (input.adminReply?.trim()) {
           await db.insert(supportMessages).values({
             supportRequestId: input.requestId,
+            dataOrigin: "live",
             senderType: 'support',
             senderId: null,
             senderName: 'Équipe Prince Délice',
@@ -471,7 +481,7 @@ export const appRouter = router({
       const db = await getDb();
       if (!db) return { totalOrders: 0, totalRevenue: 0, lowStockCount: 0, totalProducts: 0 };
 
-      const allOrders = await db.select().from(orders);
+      const allOrders = await db.select().from(orders).where(eq(orders.dataOrigin, "live"));
       const allProducts = await db.select().from(products);
 
       let totalRevenue = 0;
@@ -492,7 +502,7 @@ export const appRouter = router({
     getAllOrders: adminProcedure.query(async () => {
       const db = await getDb();
       if (!db) return [];
-      const allOrders = await db.select().from(orders).orderBy(desc(orders.createdAt));
+      const allOrders = await db.select().from(orders).where(eq(orders.dataOrigin, "live")).orderBy(desc(orders.createdAt));
       const result = [];
       for (const ord of allOrders) {
         const items = await db.select().from(orderItems).where(eq(orderItems.orderId, ord.id));
@@ -509,7 +519,7 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         const db = await getDb();
         if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
-        await db.update(orders).set({ status: input.status }).where(eq(orders.id, input.orderId));
+        await db.update(orders).set({ status: input.status }).where(and(eq(orders.id, input.orderId), eq(orders.dataOrigin, "live")));
         return { success: true };
       }),
 
@@ -519,14 +529,14 @@ export const appRouter = router({
         const db = await getDb();
         if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
         await db.delete(orderItems).where(eq(orderItems.orderId, input.orderId));
-        await db.delete(orders).where(eq(orders.id, input.orderId));
+        await db.delete(orders).where(and(eq(orders.id, input.orderId), eq(orders.dataOrigin, "live")));
         return { success: true };
       }),
 
     getAllReturns: adminProcedure.query(async () => {
       const db = await getDb();
       if (!db) return [];
-      return await db.select().from(returns).orderBy(desc(returns.createdAt));
+      return await db.select().from(returns).where(eq(returns.dataOrigin, "live")).orderBy(desc(returns.createdAt));
     }),
 
     processReturn: adminProcedure
@@ -545,7 +555,7 @@ export const appRouter = router({
             compensationType: input.compensationType || null,
             adminNotes: input.adminNotes || null,
           })
-          .where(eq(returns.id, input.returnId));
+          .where(and(eq(returns.id, input.returnId), eq(returns.dataOrigin, "live")));
         return { success: true };
       }),
 
@@ -598,7 +608,7 @@ export const appRouter = router({
     getReviews: publicProcedure.query(async () => {
       const db = await getDb();
       if (!db) return [];
-      return await db.select().from(reviews).orderBy(desc(reviews.createdAt));
+      return await db.select().from(reviews).where(eq(reviews.dataOrigin, "live")).orderBy(desc(reviews.createdAt));
     }),
 
     addReview: protectedProcedure
@@ -612,6 +622,7 @@ export const appRouter = router({
         if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
         await db.insert(reviews).values({
           userId: ctx.user.id,
+          dataOrigin: "live",
           userName: ctx.user.name || "Client Prince Délice",
           productId: input.productId || null,
           rating: input.rating,

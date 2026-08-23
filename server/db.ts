@@ -32,8 +32,9 @@ export async function upsertUser(user: InsertUser): Promise<void> {
   try {
     const values: InsertUser = {
       openId: user.openId,
+      dataOrigin: "live",
     };
-    const updateSet: Record<string, unknown> = {};
+    const updateSet: Record<string, unknown> = { dataOrigin: "live" };
 
     const textFields = ["name", "email", "loginMethod"] as const;
     type TextField = (typeof textFields)[number];

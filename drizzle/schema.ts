@@ -7,7 +7,8 @@ export const users = mysqlTable("users", {
   email: varchar("email", { length: 320 }),
   phone: varchar("phone", { length: 32 }),
   loginMethod: varchar("loginMethod", { length: 64 }),
-  role: mysqlEnum("role", ["user", "admin"]).default("user").notNull(),
+  role: mysqlEnum("role", ["admin", "user"]).default("user").notNull(),
+  dataOrigin: mysqlEnum("dataOrigin", ["live", "demo"]).default("live").notNull(),
   mfaEnabled: boolean("mfaEnabled").default(false).notNull(),
   mfaSecret: varchar("mfaSecret", { length: 64 }),
   mfaMethod: mysqlEnum("mfaMethod", ["sms", "app"]).default("app").notNull(),
@@ -57,6 +58,7 @@ export const orders = mysqlTable("orders", {
   status: mysqlEnum("status", ["Validée", "En préparation", "En cours de livraison", "Livrée"]).default("Validée").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  dataOrigin: mysqlEnum("dataOrigin", ["live", "demo"]).default("live").notNull(),
 });
 
 export const orderItems = mysqlTable("orderItems", {
@@ -74,6 +76,7 @@ export const returns = mysqlTable("returns", {
   userId: int("userId").notNull(),
   reason: text("reason").notNull(),
   photoUrl: text("photoUrl").notNull(), // Soumission de photos sous 24h
+  dataOrigin: mysqlEnum("dataOrigin", ["live", "demo"]).default("live").notNull(),
   status: mysqlEnum("status", ["En attente", "Approuvée", "Rejetée"]).default("En attente").notNull(),
   compensationType: mysqlEnum("compensationType", ["avoir", "remboursement", "remplacement"]),
   adminNotes: text("adminNotes"),
@@ -97,6 +100,7 @@ export const reviews = mysqlTable("reviews", {
   productId: int("productId"),
   rating: int("rating").notNull(), // 1 to 5
   comment: text("comment").notNull(),
+  dataOrigin: mysqlEnum("dataOrigin", ["live", "demo"]).default("live").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
@@ -193,6 +197,7 @@ export const deliveryReviews = mysqlTable("deliveryReviews", {
   adminReply: text("adminReply"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  dataOrigin: mysqlEnum("dataOrigin", ["live", "demo"]).default("live").notNull(),
 });
 
 export const supportRequests = mysqlTable("supportRequests", {
@@ -207,6 +212,7 @@ export const supportRequests = mysqlTable("supportRequests", {
   adminReply: text("adminReply"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  dataOrigin: mysqlEnum("dataOrigin", ["live", "demo"]).default("live").notNull(),
 });
 
 export type DeliveryReview = typeof deliveryReviews.$inferSelect;
@@ -219,6 +225,7 @@ export const supportMessages = mysqlTable("supportMessages", {
   message: text("message").notNull(),
   readAt: timestamp("readAt"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
+  dataOrigin: mysqlEnum("dataOrigin", ["live", "demo"]).default("live").notNull(),
 });
 
 export type SupportRequest = typeof supportRequests.$inferSelect;

@@ -46,3 +46,19 @@ Bien vu — signalement utilisateur : les avis post-livraison et les demandes d'
 - [x] Déclencher côté serveur une notification persistée lors d’une réponse ou d’un changement de statut
 - [x] Ajouter un test de génération CSV et de découpage paginé des files admin
 - [x] Sauvegarder le checkpoint final après ces compléments
+
+- [x] Identifier les avis, comptes clients, commandes et demandes de démonstration à retirer
+- [x] Supprimer uniquement les données clients générées de démonstration de la base
+- [x] Retirer les avis, témoignages et contenus clients fictifs du code et de l’interface
+- [x] Empêcher le reseeding de données clients ou d’avis fictifs
+- [x] Vérifier que les données réelles restantes sont intactes et que les tests passent
+- [x] Sauvegarder et publier le nettoyage
+
+- [x] Ajouter une provenance explicite live/demo aux données clientes sensibles
+- [x] Remplacer les noms clients de test par des identifiants neutres
+- [x] Bloquer les sources demo dans les mutations publiques et le seed applicatif
+- [x] Vérifier séparément les enregistrements restants après nettoyage
+- [x] Sauvegarder et publier le nettoyage final
+
+- [x] Ajouter une garde explicite indiquant que seedInitialData ne peut écrire que le catalogue et les zones, jamais des clients ou avis
+- [x] Sauvegarder un checkpoint final après cette garde
