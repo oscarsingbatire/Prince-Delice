@@ -57,6 +57,13 @@
       "when": 1787519392580,
       "tag": "0007_sticky_skrulls",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "5",
+      "when": 1787520252573,
+      "tag": "0008_strong_sebastian_shaw",
+      "breakpoints": true
     }
   ]
 }

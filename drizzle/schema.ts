@@ -176,6 +176,7 @@ export const deliveryReviews = mysqlTable("deliveryReviews", {
   comment: text("comment").notNull(),
   status: mysqlEnum("status", ["Nouveau", "En cours", "Traité"]).default("Nouveau").notNull(),
   adminNotes: text("adminNotes"),
+  adminReply: text("adminReply"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -189,6 +190,7 @@ export const supportRequests = mysqlTable("supportRequests", {
   requiresExpert: boolean("requiresExpert").default(false).notNull(),
   status: mysqlEnum("status", ["Nouveau", "En cours", "Traité"]).default("Nouveau").notNull(),
   adminNotes: text("adminNotes"),
+  adminReply: text("adminReply"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

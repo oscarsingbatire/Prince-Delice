@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -23,6 +24,7 @@ import { Link } from "wouter";
 import { MapView } from "@/components/Map";
 import { startLogin } from "@/const";
 import { toast } from "sonner";
+import { matchesFeedbackSearch } from "@shared/feedback-utils";
 
 export default function AdminDashboardPage() {
   const { user, isAuthenticated } = useAuth();
@@ -82,6 +84,10 @@ export default function AdminDashboardPage() {
 
   const [paidDrivers, setPaidDrivers] = useState<Record<number, { paid: boolean; date: string }>>({});
   const [supportFilter, setSupportFilter] = useState<"all" | "expert">("all");
+  const [reviewSearch, setReviewSearch] = useState("");
+  const [supportSearch, setSupportSearch] = useState("");
+  const [reviewReplies, setReviewReplies] = useState<Record<number, string>>({});
+  const [supportReplies, setSupportReplies] = useState<Record<number, string>>({});
 
   const [driverName, setDriverName] = useState("");
   const [driverPhone, setDriverPhone] = useState("");
@@ -127,20 +133,20 @@ export default function AdminDashboardPage() {
     }
   };
 
-  const handleDeliveryReviewStatus = async (reviewId: number, status: "Nouveau" | "En cours" | "Traité") => {
+  const handleDeliveryReviewStatus = async (reviewId: number, status: "Nouveau" | "En cours" | "Traité", adminReply?: string) => {
     try {
-      await updateDeliveryReviewStatusMutation.mutateAsync({ reviewId, status });
-      toast.success("Statut de l'avis mis à jour.");
+      await updateDeliveryReviewStatusMutation.mutateAsync({ reviewId, status, ...(adminReply !== undefined ? { adminReply } : {}) });
+      toast.success(adminReply !== undefined ? "Réponse envoyée au client et avis mis à jour." : "Statut de l'avis mis à jour.");
       utils.shop.getAdminDeliveryReviews.invalidate();
     } catch {
       toast.error("Impossible de mettre à jour l'avis.");
     }
   };
 
-  const handleSupportRequestStatus = async (requestId: number, status: "Nouveau" | "En cours" | "Traité") => {
+  const handleSupportRequestStatus = async (requestId: number, status: "Nouveau" | "En cours" | "Traité", adminReply?: string) => {
     try {
-      await updateSupportRequestStatusMutation.mutateAsync({ requestId, status });
-      toast.success("Statut de la demande mis à jour.");
+      await updateSupportRequestStatusMutation.mutateAsync({ requestId, status, ...(adminReply !== undefined ? { adminReply } : {}) });
+      toast.success(adminReply !== undefined ? "Réponse envoyée au client et demande mise à jour." : "Statut de la demande mis à jour.");
       utils.shop.getSupportRequests.invalidate();
     } catch {
       toast.error("Impossible de mettre à jour la demande.");
@@ -552,11 +558,12 @@ export default function AdminDashboardPage() {
               </div>
               <Badge className="bg-amber-100 text-amber-800">{deliveryReviews.length} avis</Badge>
             </div>
-            {deliveryReviews.length === 0 ? (
-              <Card className="border-[#EADBC8] bg-white"><CardContent className="p-6 text-sm text-muted-foreground">Aucun avis post-livraison reçu pour le moment.</CardContent></Card>
+            <Input value={reviewSearch} onChange={e => setReviewSearch(e.target.value)} placeholder="Rechercher par client, commande ou livreur..." className="bg-white border-[#EADBC8]" />
+            {deliveryReviews.filter(review => matchesFeedbackSearch(`${review.userName} ${review.orderId} ${review.driverId || ''}`, reviewSearch)).length === 0 ? (
+              <Card className="border-[#EADBC8] bg-white"><CardContent className="p-6 text-sm text-muted-foreground">Aucun avis ne correspond à votre recherche.</CardContent></Card>
             ) : (
               <div className="space-y-4">
-                {deliveryReviews.map(review => (
+                {deliveryReviews.filter(review => matchesFeedbackSearch(`${review.userName} ${review.orderId} ${review.driverId || ''}`, reviewSearch)).map(review => (
                   <Card key={review.id} className="border-[#EADBC8] bg-white shadow-sm">
                     <CardHeader className="pb-3 border-b border-[#EADBC8] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                       <div>
@@ -576,6 +583,11 @@ export default function AdminDashboardPage() {
                       <div className="text-amber-500 tracking-widest" aria-label={`Note : ${review.rating} sur 5`}>{'★'.repeat(review.rating)}<span className="text-gray-300">{'★'.repeat(5 - review.rating)}</span></div>
                       <p className="text-sm text-[#2C221E] whitespace-pre-wrap">{review.comment}</p>
                       {review.adminNotes && <p className="text-xs text-muted-foreground bg-muted rounded p-2">Note interne : {review.adminNotes}</p>}
+                      {review.adminReply && <div className="rounded-lg bg-green-50 border border-green-200 p-3"><p className="text-xs font-semibold text-green-800">Réponse envoyée au client</p><p className="text-sm text-green-900 mt-1 whitespace-pre-wrap">{review.adminReply}</p></div>}
+                      <div className="flex flex-col sm:flex-row gap-2 pt-2">
+                        <Textarea value={reviewReplies[review.id] ?? review.adminReply ?? ""} onChange={e => setReviewReplies(prev => ({ ...prev, [review.id]: e.target.value }))} placeholder="Écrire une réponse visible par le client..." className="min-h-16 text-xs" maxLength={1000} />
+                        <Button type="button" onClick={() => handleDeliveryReviewStatus(review.id, review.status, reviewReplies[review.id] || review.adminReply || "")} disabled={!reviewReplies[review.id]?.trim() || updateDeliveryReviewStatusMutation.isPending} className="bg-[#1E3F20] text-white text-xs sm:self-end">Répondre au client</Button>
+                      </div>
                     </CardContent>
                   </Card>
                 ))}
@@ -599,11 +611,12 @@ export default function AdminDashboardPage() {
               <Button type="button" size="sm" variant={supportFilter === "all" ? "default" : "outline"} onClick={() => setSupportFilter("all")} className={supportFilter === "all" ? "bg-[#1E3F20] text-white" : "border-[#EADBC8]"}>Toutes les demandes</Button>
               <Button type="button" size="sm" variant={supportFilter === "expert" ? "default" : "outline"} onClick={() => setSupportFilter("expert")} className={supportFilter === "expert" ? "bg-red-600 text-white" : "border-[#EADBC8]"}>Demandes expertes uniquement</Button>
             </div>
-            {supportRequests.filter(request => supportFilter === "all" || request.requiresExpert).length === 0 ? (
+            <Input value={supportSearch} onChange={e => setSupportSearch(e.target.value)} placeholder="Rechercher par client, téléphone ou message..." className="bg-white border-[#EADBC8]" />
+            {supportRequests.filter(request => (supportFilter === "all" || request.requiresExpert) && matchesFeedbackSearch(`${request.userName} ${request.phone || ''} ${request.message} ${request.id}`, supportSearch)).length === 0 ? (
               <Card className="border-[#EADBC8] bg-white"><CardContent className="p-6 text-sm text-muted-foreground">{supportFilter === "expert" ? "Aucune demande nécessitant l'avis d'un expert." : "Aucune demande de support enregistrée."}</CardContent></Card>
             ) : (
               <div className="space-y-4">
-                {supportRequests.filter(request => supportFilter === "all" || request.requiresExpert).map(request => (
+                {supportRequests.filter(request => (supportFilter === "all" || request.requiresExpert) && matchesFeedbackSearch(`${request.userName} ${request.phone || ''} ${request.message} ${request.id}`, supportSearch)).map(request => (
                   <Card key={request.id} className="border-[#EADBC8] bg-white shadow-sm">
                     <CardHeader className="pb-3 border-b border-[#EADBC8] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                       <div>
@@ -622,6 +635,11 @@ export default function AdminDashboardPage() {
                     <CardContent className="pt-4">
                       <p className="text-sm whitespace-pre-wrap text-[#2C221E]">{request.message}</p>
                       {request.adminNotes && <p className="text-xs text-muted-foreground bg-muted rounded p-2 mt-3">Note interne : {request.adminNotes}</p>}
+                      {request.adminReply && <div className="rounded-lg bg-green-50 border border-green-200 p-3 mt-3"><p className="text-xs font-semibold text-green-800">Réponse envoyée au client</p><p className="text-sm text-green-900 mt-1 whitespace-pre-wrap">{request.adminReply}</p></div>}
+                      <div className="flex flex-col sm:flex-row gap-2 pt-3">
+                        <Textarea value={supportReplies[request.id] ?? request.adminReply ?? ""} onChange={e => setSupportReplies(prev => ({ ...prev, [request.id]: e.target.value }))} placeholder="Écrire une réponse visible par le client..." className="min-h-16 text-xs" maxLength={1000} />
+                        <Button type="button" onClick={() => handleSupportRequestStatus(request.id, request.status, supportReplies[request.id] || request.adminReply || "")} disabled={!supportReplies[request.id]?.trim() || updateSupportRequestStatusMutation.isPending} className="bg-[#1E3F20] text-white text-xs sm:self-end">Répondre au client</Button>
+                      </div>
                     </CardContent>
                   </Card>
                 ))}

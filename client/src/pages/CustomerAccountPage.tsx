@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,7 @@ import { ArrowLeft, Package, ShieldCheck, AlertCircle, RefreshCw, Upload, CheckC
 import { Link } from "wouter";
 import { startLogin } from "@/const";
 import { toast } from "sonner";
+import { getFeedbackNotification } from "@shared/feedback-utils";
 
 export default function CustomerAccountPage() {
   const { user, isAuthenticated, logout } = useAuth();
@@ -21,7 +22,8 @@ export default function CustomerAccountPage() {
 
   const { data: orders = [] } = trpc.shop.getUserOrders.useQuery(undefined, { enabled: isAuthenticated });
   const { data: returns = [] } = trpc.shop.getUserReturns.useQuery(undefined, { enabled: isAuthenticated });
-  const { data: deliveryReviews = [] } = trpc.shop.getMyDeliveryReviews.useQuery(undefined, { enabled: isAuthenticated });
+  const { data: deliveryReviews = [] } = trpc.shop.getMyDeliveryReviews.useQuery(undefined, { enabled: isAuthenticated, refetchInterval: 15000 });
+  const { data: supportRequests = [] } = trpc.shop.getMySupportRequests.useQuery(undefined, { enabled: isAuthenticated, refetchInterval: 15000 });
   const updateMfaMutation = trpc.auth.updateMfa.useMutation();
   const submitReturnMutation = trpc.shop.submitReturn.useMutation();
   const submitDeliveryReviewMutation = trpc.shop.submitDeliveryReview.useMutation();
@@ -37,6 +39,24 @@ export default function CustomerAccountPage() {
   const [returnPhotoUrl, setReturnPhotoUrl] = useState("");
   const [isSubmittingReturn, setIsSubmittingReturn] = useState(false);
   const [reviewDrafts, setReviewDrafts] = useState<Record<number, { rating: number; comment: string }>>({});
+  const [clientNotification, setClientNotification] = useState<string | null>(null);
+
+  useEffect(() => {
+    const latestUpdate = getFeedbackNotification([
+      ...deliveryReviews.map(review => ({ id: `review-${review.id}`, updatedAt: review.updatedAt, status: review.status, adminReply: review.adminReply })),
+      ...supportRequests.map(request => ({ id: `support-${request.id}`, updatedAt: request.updatedAt, status: request.status, adminReply: request.adminReply })),
+    ]);
+    if (!latestUpdate) return;
+    const latestItem = [...deliveryReviews.map(review => ({ id: `review-${review.id}`, updatedAt: review.updatedAt })), ...supportRequests.map(request => ({ id: `support-${request.id}`, updatedAt: request.updatedAt }))]
+      .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())[0];
+    if (!latestItem) return;
+    const alertKey = `prince-delice-alert-${latestItem.id}-${new Date(latestItem.updatedAt).getTime()}`;
+    if (localStorage.getItem("prince-delice-last-alert") !== alertKey) {
+      localStorage.setItem("prince-delice-last-alert", alertKey);
+      setClientNotification(latestUpdate);
+      toast.info(latestUpdate);
+    }
+  }, [deliveryReviews, supportRequests]);
 
   if (!isAuthenticated) {
     return (
@@ -137,6 +157,12 @@ export default function CustomerAccountPage() {
 
       <main className="flex-1 max-w-5xl w-full mx-auto px-6 py-10">
         <h1 className="text-3xl font-serif font-bold text-[#1E3F20] mb-8">Mon Espace Client</h1>
+        {clientNotification && (
+          <div className="mb-6 flex items-start justify-between gap-3 rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
+            <div><p className="font-semibold">Nouvelle information de l’équipe</p><p className="mt-1">{clientNotification}</p></div>
+            <button type="button" onClick={() => setClientNotification(null)} className="text-blue-700 hover:text-blue-950" aria-label="Fermer la notification">✕</button>
+          </div>
+        )}
 
         <Tabs defaultValue="orders" className="space-y-6">
           <TabsList className="bg-[#EADBC8]/40 p-1.5 border border-[#EADBC8] grid grid-cols-2 sm:grid-cols-4 h-auto gap-1">
@@ -145,6 +171,9 @@ export default function CustomerAccountPage() {
             </TabsTrigger>
             <TabsTrigger value="returns" className="data-[state=active]:bg-white data-[state=active]:text-[#1E3F20] py-2.5 text-xs sm:text-sm">
               Retours & Réclamations (24h)
+            </TabsTrigger>
+            <TabsTrigger value="messages" className="data-[state=active]:bg-white data-[state=active]:text-[#1E3F20] py-2.5 text-xs sm:text-sm">
+              Messages & Réponses
             </TabsTrigger>
             <TabsTrigger value="referral" className="data-[state=active]:bg-white data-[state=active]:text-[#1E3F20] py-2.5 text-xs sm:text-sm">
               Parrainage & Fidélité
@@ -534,6 +563,44 @@ export default function CustomerAccountPage() {
                 ))}
               </div>
             )}
+          </TabsContent>
+
+          {/* Messages and admin responses */}
+          <TabsContent value="messages" className="space-y-6">
+            <Card className="border-[#EADBC8] bg-white shadow-sm">
+              <CardHeader>
+                <CardTitle className="font-serif text-xl text-[#1E3F20]">Messages & réponses de l’équipe</CardTitle>
+                <p className="text-sm text-muted-foreground">Retrouvez ici le suivi de vos demandes et les réponses de Prince Délice.</p>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {supportRequests.length === 0 && deliveryReviews.filter(review => review.adminReply).length === 0 ? (
+                  <p className="text-sm text-muted-foreground">Aucune réponse ou demande suivie pour le moment.</p>
+                ) : (
+                  <>
+                    {supportRequests.map(request => (
+                      <div key={`support-${request.id}`} className="rounded-xl border border-[#EADBC8] bg-[#FDFBF7] p-4 space-y-2">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                          <p className="text-sm font-semibold text-[#1E3F20]">Demande #{request.id} {request.requiresExpert && <Badge className="ml-1 bg-red-100 text-red-800">Avis expert</Badge>}</p>
+                          <Badge className={request.status === "Traité" ? "bg-green-100 text-green-800" : "bg-amber-100 text-amber-800"}>{request.status}</Badge>
+                        </div>
+                        <p className="text-sm text-[#2C221E] whitespace-pre-wrap">{request.message}</p>
+                        {request.adminReply ? <div className="rounded-lg bg-green-50 border border-green-200 p-3"><p className="text-xs font-semibold text-green-800">Réponse de l’administration</p><p className="text-sm text-green-900 mt-1 whitespace-pre-wrap">{request.adminReply}</p></div> : <p className="text-xs text-muted-foreground">Votre demande est en cours d’examen.</p>}
+                      </div>
+                    ))}
+                    {deliveryReviews.filter(review => review.adminReply).map(review => (
+                      <div key={`review-${review.id}`} className="rounded-xl border border-[#EADBC8] bg-[#FDFBF7] p-4 space-y-2">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                          <p className="text-sm font-semibold text-[#1E3F20]">Avis de livraison — Commande #{review.orderId}</p>
+                          <Badge className={review.status === "Traité" ? "bg-green-100 text-green-800" : "bg-amber-100 text-amber-800"}>{review.status}</Badge>
+                        </div>
+                        <p className="text-sm text-[#2C221E]">Votre note : <span className="text-amber-500">{'★'.repeat(review.rating)}</span></p>
+                        <div className="rounded-lg bg-green-50 border border-green-200 p-3"><p className="text-xs font-semibold text-green-800">Réponse de l’administration</p><p className="text-sm text-green-900 mt-1 whitespace-pre-wrap">{review.adminReply}</p></div>
+                      </div>
+                    ))}
+                  </>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* Referral Tab */}

@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { deliveryReviews, drivers, orders } from "../drizzle/schema";
 import type { TrpcContext } from "./_core/context";
+import { getFeedbackNotification, matchesFeedbackSearch } from "../shared/feedback-utils";
 
 const inserted: Array<{ table: unknown; values: unknown }> = [];
 const updates: Array<{ table: unknown; values: unknown }> = [];
@@ -81,8 +82,22 @@ describe("Feedback persistence success paths", () => {
     expect(inserted[0]?.values).toMatchObject({ userId: 1, requiresExpert: true, status: "Nouveau" });
 
     const adminCaller = appRouter.createCaller(createContext("admin"));
-    const result = await adminCaller.shop.updateSupportRequestStatus({ requestId: 1, status: "En cours" });
+    const result = await adminCaller.shop.updateSupportRequestStatus({ requestId: 1, status: "En cours", adminReply: "Votre demande est prise en charge par notre expert." });
     expect(result).toEqual({ success: true });
-    expect(updates[0]?.values).toMatchObject({ status: "En cours" });
+    expect(updates[0]?.values).toMatchObject({ status: "En cours", adminReply: "Votre demande est prise en charge par notre expert." });
+  });
+
+  it("supports an admin reply on a delivery review", async () => {
+    const adminCaller = appRouter.createCaller(createContext("admin"));
+    const result = await adminCaller.shop.updateDeliveryReviewStatus({ reviewId: 1, status: "Traité", adminReply: "Merci pour votre retour." });
+    expect(result).toEqual({ success: true });
+    expect(updates[0]?.values).toMatchObject({ status: "Traité", adminReply: "Merci pour votre retour." });
+  });
+
+  it("returns client notifications and matches multi-criteria searches", () => {
+    const notification = getFeedbackNotification([{ id: "support-1", updatedAt: new Date("2026-08-23T10:00:00Z"), status: "Traité", adminReply: "Réponse" }]);
+    expect(notification).toContain("répondu");
+    expect(matchesFeedbackSearch("Oscar Singbatire +23675000000 commande 42", "75000000")).toBe(true);
+    expect(matchesFeedbackSearch("Oscar Singbatire commande 42", "inexistant")).toBe(false);
   });
 });

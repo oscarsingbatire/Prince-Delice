@@ -360,11 +360,11 @@ export const appRouter = router({
     }),
 
     updateDeliveryReviewStatus: adminProcedure
-      .input(z.object({ reviewId: z.number(), status: z.enum(['Nouveau', 'En cours', 'Traité']), adminNotes: z.string().max(1000).optional() }))
+      .input(z.object({ reviewId: z.number(), status: z.enum(['Nouveau', 'En cours', 'Traité']), adminNotes: z.string().max(1000).optional(), adminReply: z.string().trim().max(1000).optional() }))
       .mutation(async ({ input }) => {
         const db = await getDb();
         if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
-        await db.update(deliveryReviews).set({ status: input.status, adminNotes: input.adminNotes ?? null }).where(eq(deliveryReviews.id, input.reviewId));
+        await db.update(deliveryReviews).set({ status: input.status, ...(input.adminNotes !== undefined ? { adminNotes: input.adminNotes || null } : {}), ...(input.adminReply !== undefined ? { adminReply: input.adminReply || null } : {}) }).where(eq(deliveryReviews.id, input.reviewId));
         return { success: true };
       }),
 
@@ -390,12 +390,18 @@ export const appRouter = router({
       return await db.select().from(supportRequests).orderBy(desc(supportRequests.createdAt));
     }),
 
+    getMySupportRequests: protectedProcedure.query(async ({ ctx }) => {
+      const db = await getDb();
+      if (!db) return [];
+      return await db.select().from(supportRequests).where(eq(supportRequests.userId, ctx.user.id)).orderBy(desc(supportRequests.createdAt));
+    }),
+
     updateSupportRequestStatus: adminProcedure
-      .input(z.object({ requestId: z.number(), status: z.enum(['Nouveau', 'En cours', 'Traité']), adminNotes: z.string().max(1000).optional() }))
+      .input(z.object({ requestId: z.number(), status: z.enum(['Nouveau', 'En cours', 'Traité']), adminNotes: z.string().max(1000).optional(), adminReply: z.string().trim().max(1000).optional() }))
       .mutation(async ({ input }) => {
         const db = await getDb();
         if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
-        await db.update(supportRequests).set({ status: input.status, adminNotes: input.adminNotes ?? null }).where(eq(supportRequests.id, input.requestId));
+        await db.update(supportRequests).set({ status: input.status, ...(input.adminNotes !== undefined ? { adminNotes: input.adminNotes || null } : {}), ...(input.adminReply !== undefined ? { adminReply: input.adminReply || null } : {}) }).where(eq(supportRequests.id, input.requestId));
         return { success: true };
       }),
 

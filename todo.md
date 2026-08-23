@@ -28,3 +28,9 @@ Bien vu — signalement utilisateur : les avis post-livraison et les demandes d'
 - [x] Afficher un filtre et un indicateur dédiés aux demandes expertes dans l’administration
 - [x] Compléter les tests de succès et de mise à jour des statuts
 - [x] Sauvegarder un nouveau checkpoint après ces corrections
+
+- [x] Permettre à l’administration de rédiger une réponse visible dans l’espace client pour chaque avis ou demande
+- [x] Informer le client lorsqu’un avis ou ticket change de statut ou reçoit une réponse
+- [x] Ajouter une recherche administrative par client, commande ou numéro de téléphone
+- [x] Ajouter les tests des réponses, notifications et filtres de recherche
+- [x] Vérifier le build et sauvegarder un checkpoint des nouvelles fonctionnalités
