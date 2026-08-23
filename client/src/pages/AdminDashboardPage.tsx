@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Package, DollarSign, AlertTriangle, ShieldCheck, Truck, Plus, CheckCircle, XCircle, Star, MessageCircle } from "lucide-react";
+import { Package, DollarSign, AlertTriangle, ShieldCheck, Truck, Plus, CheckCircle, XCircle, Star, MessageCircle, Download } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,7 +24,7 @@ import { Link } from "wouter";
 import { MapView } from "@/components/Map";
 import { startLogin } from "@/const";
 import { toast } from "sonner";
-import { matchesFeedbackSearch } from "@shared/feedback-utils";
+import { buildFeedbackCsv, matchesFeedbackSearch, paginateItems } from "@shared/feedback-utils";
 
 export default function AdminDashboardPage() {
   const { user, isAuthenticated } = useAuth();
@@ -88,6 +88,13 @@ export default function AdminDashboardPage() {
   const [supportSearch, setSupportSearch] = useState("");
   const [reviewReplies, setReviewReplies] = useState<Record<number, string>>({});
   const [supportReplies, setSupportReplies] = useState<Record<number, string>>({});
+  const [feedbackPage, setFeedbackPage] = useState(1);
+  const pageSize = 5;
+  const quickReplyTemplates = [
+    "Merci pour votre retour. Nous prenons votre remarque en compte.",
+    "Votre demande est prise en charge par notre équipe support.",
+    "Nous allons vérifier ce point et revenir vers vous rapidement.",
+  ];
 
   const [driverName, setDriverName] = useState("");
   const [driverPhone, setDriverPhone] = useState("");
@@ -151,6 +158,29 @@ export default function AdminDashboardPage() {
     } catch {
       toast.error("Impossible de mettre à jour la demande.");
     }
+  };
+
+  const filteredDeliveryReviews = deliveryReviews.filter(review => matchesFeedbackSearch(`${review.userName} ${review.orderId} ${review.driverId || ''}`, reviewSearch));
+  const filteredSupportRequests = supportRequests.filter(request => (supportFilter === "all" || request.requiresExpert) && matchesFeedbackSearch(`${request.userName} ${request.phone || ''} ${request.message} ${request.id}`, supportSearch));
+  const reviewPageCount = Math.max(1, Math.ceil(filteredDeliveryReviews.length / pageSize));
+  const supportPageCount = Math.max(1, Math.ceil(filteredSupportRequests.length / pageSize));
+  const pagedDeliveryReviews = paginateItems(filteredDeliveryReviews, feedbackPage, pageSize);
+  const pagedSupportRequests = paginateItems(filteredSupportRequests, feedbackPage, pageSize);
+
+  const handleExportFeedbackCsv = () => {
+    const rows = [
+      ["Type", "ID", "Client", "Téléphone", "Commande", "Note", "Message", "Statut", "Réponse admin", "Date"],
+      ...deliveryReviews.map(review => ["Avis livraison", review.id, review.userName, "", review.orderId, review.rating, review.comment, review.status, review.adminReply || "", review.createdAt]),
+      ...supportRequests.map(request => ["Demande support", request.id, request.userName, request.phone || "", "", "", request.message, request.status, request.adminReply || "", request.createdAt]),
+    ];
+    const csv = buildFeedbackCsv(rows);
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `prince-delice-avis-support-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+    toast.success("Export CSV téléchargé.");
   };
 
   if (!isAuthenticated || user?.role !== 'admin') {
@@ -558,12 +588,15 @@ export default function AdminDashboardPage() {
               </div>
               <Badge className="bg-amber-100 text-amber-800">{deliveryReviews.length} avis</Badge>
             </div>
-            <Input value={reviewSearch} onChange={e => setReviewSearch(e.target.value)} placeholder="Rechercher par client, commande ou livreur..." className="bg-white border-[#EADBC8]" />
-            {deliveryReviews.filter(review => matchesFeedbackSearch(`${review.userName} ${review.orderId} ${review.driverId || ''}`, reviewSearch)).length === 0 ? (
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Input value={reviewSearch} onChange={e => { setReviewSearch(e.target.value); setFeedbackPage(1); }} placeholder="Rechercher par client, commande ou livreur..." className="bg-white border-[#EADBC8]" />
+              <Button type="button" variant="outline" onClick={handleExportFeedbackCsv} className="border-[#EADBC8] text-[#1E3F20] whitespace-nowrap"><Download className="w-4 h-4 mr-2" /> Exporter CSV</Button>
+            </div>
+            {filteredDeliveryReviews.length === 0 ? (
               <Card className="border-[#EADBC8] bg-white"><CardContent className="p-6 text-sm text-muted-foreground">Aucun avis ne correspond à votre recherche.</CardContent></Card>
             ) : (
               <div className="space-y-4">
-                {deliveryReviews.filter(review => matchesFeedbackSearch(`${review.userName} ${review.orderId} ${review.driverId || ''}`, reviewSearch)).map(review => (
+                {pagedDeliveryReviews.map(review => (
                   <Card key={review.id} className="border-[#EADBC8] bg-white shadow-sm">
                     <CardHeader className="pb-3 border-b border-[#EADBC8] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                       <div>
@@ -585,6 +618,9 @@ export default function AdminDashboardPage() {
                       {review.adminNotes && <p className="text-xs text-muted-foreground bg-muted rounded p-2">Note interne : {review.adminNotes}</p>}
                       {review.adminReply && <div className="rounded-lg bg-green-50 border border-green-200 p-3"><p className="text-xs font-semibold text-green-800">Réponse envoyée au client</p><p className="text-sm text-green-900 mt-1 whitespace-pre-wrap">{review.adminReply}</p></div>}
                       <div className="flex flex-col sm:flex-row gap-2 pt-2">
+                        <div className="flex flex-wrap gap-1">
+                          {quickReplyTemplates.map(template => <Button key={template} type="button" variant="outline" size="sm" onClick={() => setReviewReplies(prev => ({ ...prev, [review.id]: template }))} className="border-[#EADBC8] text-[10px] h-7">{template.slice(0, 30)}…</Button>)}
+                        </div>
                         <Textarea value={reviewReplies[review.id] ?? review.adminReply ?? ""} onChange={e => setReviewReplies(prev => ({ ...prev, [review.id]: e.target.value }))} placeholder="Écrire une réponse visible par le client..." className="min-h-16 text-xs" maxLength={1000} />
                         <Button type="button" onClick={() => handleDeliveryReviewStatus(review.id, review.status, reviewReplies[review.id] || review.adminReply || "")} disabled={!reviewReplies[review.id]?.trim() || updateDeliveryReviewStatusMutation.isPending} className="bg-[#1E3F20] text-white text-xs sm:self-end">Répondre au client</Button>
                       </div>
@@ -593,6 +629,7 @@ export default function AdminDashboardPage() {
                 ))}
               </div>
             )}
+            {filteredDeliveryReviews.length > 0 && <div className="flex items-center justify-between gap-3 border-t border-[#EADBC8] pt-3"><span className="text-xs text-muted-foreground">Page {feedbackPage} sur {reviewPageCount}</span><div className="flex gap-2"><Button type="button" size="sm" variant="outline" disabled={feedbackPage <= 1} onClick={() => setFeedbackPage(page => Math.max(1, page - 1))}>Précédente</Button><Button type="button" size="sm" variant="outline" disabled={feedbackPage >= reviewPageCount} onClick={() => setFeedbackPage(page => Math.min(reviewPageCount, page + 1))}>Suivante</Button></div></div>}
           </TabsContent>
 
           {/* 5. Intelligent messaging and expert requests */}
@@ -608,15 +645,18 @@ export default function AdminDashboardPage() {
               </div>
             </div>
             <div className="flex flex-wrap gap-2">
-              <Button type="button" size="sm" variant={supportFilter === "all" ? "default" : "outline"} onClick={() => setSupportFilter("all")} className={supportFilter === "all" ? "bg-[#1E3F20] text-white" : "border-[#EADBC8]"}>Toutes les demandes</Button>
-              <Button type="button" size="sm" variant={supportFilter === "expert" ? "default" : "outline"} onClick={() => setSupportFilter("expert")} className={supportFilter === "expert" ? "bg-red-600 text-white" : "border-[#EADBC8]"}>Demandes expertes uniquement</Button>
+              <Button type="button" size="sm" variant={supportFilter === "all" ? "default" : "outline"} onClick={() => { setSupportFilter("all"); setFeedbackPage(1); }} className={supportFilter === "all" ? "bg-[#1E3F20] text-white" : "border-[#EADBC8]"}>Toutes les demandes</Button>
+              <Button type="button" size="sm" variant={supportFilter === "expert" ? "default" : "outline"} onClick={() => { setSupportFilter("expert"); setFeedbackPage(1); }} className={supportFilter === "expert" ? "bg-red-600 text-white" : "border-[#EADBC8]"}>Demandes expertes uniquement</Button>
             </div>
-            <Input value={supportSearch} onChange={e => setSupportSearch(e.target.value)} placeholder="Rechercher par client, téléphone ou message..." className="bg-white border-[#EADBC8]" />
-            {supportRequests.filter(request => (supportFilter === "all" || request.requiresExpert) && matchesFeedbackSearch(`${request.userName} ${request.phone || ''} ${request.message} ${request.id}`, supportSearch)).length === 0 ? (
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Input value={supportSearch} onChange={e => { setSupportSearch(e.target.value); setFeedbackPage(1); }} placeholder="Rechercher par client, téléphone ou message..." className="bg-white border-[#EADBC8]" />
+              <Button type="button" variant="outline" onClick={handleExportFeedbackCsv} className="border-[#EADBC8] text-[#1E3F20] whitespace-nowrap"><Download className="w-4 h-4 mr-2" /> Exporter CSV</Button>
+            </div>
+            {filteredSupportRequests.length === 0 ? (
               <Card className="border-[#EADBC8] bg-white"><CardContent className="p-6 text-sm text-muted-foreground">{supportFilter === "expert" ? "Aucune demande nécessitant l'avis d'un expert." : "Aucune demande de support enregistrée."}</CardContent></Card>
             ) : (
               <div className="space-y-4">
-                {supportRequests.filter(request => (supportFilter === "all" || request.requiresExpert) && matchesFeedbackSearch(`${request.userName} ${request.phone || ''} ${request.message} ${request.id}`, supportSearch)).map(request => (
+                {pagedSupportRequests.map(request => (
                   <Card key={request.id} className="border-[#EADBC8] bg-white shadow-sm">
                     <CardHeader className="pb-3 border-b border-[#EADBC8] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                       <div>
@@ -633,10 +673,15 @@ export default function AdminDashboardPage() {
                       </Select>
                     </CardHeader>
                     <CardContent className="pt-4">
-                      <p className="text-sm whitespace-pre-wrap text-[#2C221E]">{request.message}</p>
+                      {!request.messages?.length && <p className="text-sm whitespace-pre-wrap text-[#2C221E]">{request.message}</p>}
                       {request.adminNotes && <p className="text-xs text-muted-foreground bg-muted rounded p-2 mt-3">Note interne : {request.adminNotes}</p>}
-                      {request.adminReply && <div className="rounded-lg bg-green-50 border border-green-200 p-3 mt-3"><p className="text-xs font-semibold text-green-800">Réponse envoyée au client</p><p className="text-sm text-green-900 mt-1 whitespace-pre-wrap">{request.adminReply}</p></div>}
-                      <div className="flex flex-col sm:flex-row gap-2 pt-3">
+                      {request.messages?.length > 0 && <div className="space-y-2 mt-3">{request.messages.map(message => <div key={message.id} className={`rounded-lg p-3 text-sm ${message.senderType === "support" ? "bg-green-50 border border-green-200" : "bg-[#FDFBF7] border border-[#EADBC8]"}`}><p className="text-[11px] font-semibold mb-1">{message.senderType === "support" ? "Équipe Prince Délice" : message.senderName}</p><p className="whitespace-pre-wrap">{message.message}</p></div>)}</div>}
+                      {request.phone && <div className="flex flex-wrap gap-2 mt-3"><a href={`https://wa.me/${request.phone.replace(/\D/g, "")}?text=${encodeURIComponent(request.adminReply || "Bonjour, l’équipe Prince Délice vous contacte au sujet de votre demande.")}`} target="_blank" rel="noreferrer" className="inline-flex items-center rounded-md bg-green-600 px-3 py-1.5 text-xs font-semibold text-white">Notifier WhatsApp</a><a href={`sms:${request.phone}?body=${encodeURIComponent(request.adminReply || "Bonjour, l’équipe Prince Délice vous contacte au sujet de votre demande.")}`} className="inline-flex items-center rounded-md border border-[#EADBC8] px-3 py-1.5 text-xs font-semibold text-[#1E3F20]">Notifier par SMS</a></div>}
+                      {request.adminReply && !request.messages?.some(message => message.senderType === "support" && message.message === request.adminReply) && <div className="rounded-lg bg-green-50 border border-green-200 p-3 mt-3"><p className="text-xs font-semibold text-green-800">Réponse envoyée au client</p><p className="text-sm text-green-900 mt-1 whitespace-pre-wrap">{request.adminReply}</p></div>}
+                      <div className="flex flex-wrap gap-1 pt-3">
+                        {quickReplyTemplates.map(template => <Button key={template} type="button" variant="outline" size="sm" onClick={() => setSupportReplies(prev => ({ ...prev, [request.id]: template }))} className="border-[#EADBC8] text-[10px] h-7">{template.slice(0, 30)}…</Button>)}
+                      </div>
+                      <div className="flex flex-col sm:flex-row gap-2 pt-2">
                         <Textarea value={supportReplies[request.id] ?? request.adminReply ?? ""} onChange={e => setSupportReplies(prev => ({ ...prev, [request.id]: e.target.value }))} placeholder="Écrire une réponse visible par le client..." className="min-h-16 text-xs" maxLength={1000} />
                         <Button type="button" onClick={() => handleSupportRequestStatus(request.id, request.status, supportReplies[request.id] || request.adminReply || "")} disabled={!supportReplies[request.id]?.trim() || updateSupportRequestStatusMutation.isPending} className="bg-[#1E3F20] text-white text-xs sm:self-end">Répondre au client</Button>
                       </div>
@@ -645,6 +690,7 @@ export default function AdminDashboardPage() {
                 ))}
               </div>
             )}
+            {filteredSupportRequests.length > 0 && <div className="flex items-center justify-between gap-3 border-t border-[#EADBC8] pt-3"><span className="text-xs text-muted-foreground">Page {feedbackPage} sur {supportPageCount}</span><div className="flex gap-2"><Button type="button" size="sm" variant="outline" disabled={feedbackPage <= 1} onClick={() => setFeedbackPage(page => Math.max(1, page - 1))}>Précédente</Button><Button type="button" size="sm" variant="outline" disabled={feedbackPage >= supportPageCount} onClick={() => setFeedbackPage(page => Math.min(supportPageCount, page + 1))}>Suivante</Button></div></div>}
           </TabsContent>
 
           {/* 6. Delivery Zones */}

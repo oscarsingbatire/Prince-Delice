@@ -28,6 +28,7 @@ export default function CustomerAccountPage() {
   const submitReturnMutation = trpc.shop.submitReturn.useMutation();
   const submitDeliveryReviewMutation = trpc.shop.submitDeliveryReview.useMutation();
   const sendSmsOtpMutation = trpc.shop.sendSmsOtp.useMutation();
+  const sendSupportMessageMutation = trpc.shop.sendSupportMessage.useMutation();
 
   const [mfaEnabled, setMfaEnabled] = useState(user?.mfaEnabled || false);
   const [mfaMethod, setMfaMethod] = useState<"sms" | "app">(user?.mfaMethod || "app");
@@ -40,6 +41,7 @@ export default function CustomerAccountPage() {
   const [isSubmittingReturn, setIsSubmittingReturn] = useState(false);
   const [reviewDrafts, setReviewDrafts] = useState<Record<number, { rating: number; comment: string }>>({});
   const [clientNotification, setClientNotification] = useState<string | null>(null);
+  const [chatDrafts, setChatDrafts] = useState<Record<number, string>>({});
 
   useEffect(() => {
     const latestUpdate = getFeedbackNotification([
@@ -83,6 +85,19 @@ export default function CustomerAccountPage() {
       </div>
     );
   }
+
+  const handleSendSupportMessage = async (supportRequestId: number) => {
+    const message = chatDrafts[supportRequestId]?.trim();
+    if (!message || sendSupportMessageMutation.isPending) return;
+    try {
+      await sendSupportMessageMutation.mutateAsync({ supportRequestId, message });
+      setChatDrafts(prev => ({ ...prev, [supportRequestId]: "" }));
+      toast.success("Message envoyé à l’équipe support.");
+      utils.shop.getMySupportRequests.invalidate();
+    } catch (error: any) {
+      toast.error(error.message || "Votre message n’a pas pu être envoyé.");
+    }
+  };
 
   const handleSaveMfa = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -583,8 +598,18 @@ export default function CustomerAccountPage() {
                           <p className="text-sm font-semibold text-[#1E3F20]">Demande #{request.id} {request.requiresExpert && <Badge className="ml-1 bg-red-100 text-red-800">Avis expert</Badge>}</p>
                           <Badge className={request.status === "Traité" ? "bg-green-100 text-green-800" : "bg-amber-100 text-amber-800"}>{request.status}</Badge>
                         </div>
-                        <p className="text-sm text-[#2C221E] whitespace-pre-wrap">{request.message}</p>
-                        {request.adminReply ? <div className="rounded-lg bg-green-50 border border-green-200 p-3"><p className="text-xs font-semibold text-green-800">Réponse de l’administration</p><p className="text-sm text-green-900 mt-1 whitespace-pre-wrap">{request.adminReply}</p></div> : <p className="text-xs text-muted-foreground">Votre demande est en cours d’examen.</p>}
+                        <div className="max-h-64 overflow-y-auto space-y-2 rounded-lg bg-white p-3 border border-[#EADBC8]">
+                          {(request.messages?.length ? request.messages : [{ id: `initial-${request.id}`, senderType: "client", senderName: "Vous", message: request.message }]).map(message => (
+                            <div key={message.id} className={`rounded-lg p-3 text-sm ${message.senderType === "support" ? "bg-green-50 border border-green-200 text-green-900" : "bg-[#FDFBF7] text-[#2C221E]"}`}>
+                              <p className="text-[11px] font-semibold mb-1">{message.senderType === "support" ? "Équipe Prince Délice" : "Vous"}</p>
+                              <p className="whitespace-pre-wrap">{message.message}</p>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="flex flex-col sm:flex-row gap-2 pt-1">
+                          <Textarea value={chatDrafts[request.id] ?? ""} onChange={e => setChatDrafts(prev => ({ ...prev, [request.id]: e.target.value }))} placeholder="Écrire un message à l’équipe support..." className="min-h-16 text-sm" maxLength={2000} />
+                          <Button type="button" onClick={() => handleSendSupportMessage(request.id)} disabled={!chatDrafts[request.id]?.trim() || sendSupportMessageMutation.isPending} className="bg-[#1E3F20] text-white text-xs sm:self-end">{sendSupportMessageMutation.isPending ? "Envoi..." : "Envoyer"}</Button>
+                        </div>
                       </div>
                     ))}
                     {deliveryReviews.filter(review => review.adminReply).map(review => (

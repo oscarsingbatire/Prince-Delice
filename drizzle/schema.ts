@@ -152,6 +152,20 @@ export const smsGatewayLogs = mysqlTable("smsGatewayLogs", {
 export type UserLoyalty = typeof userLoyalty.$inferSelect;
 export type SmsGatewayLog = typeof smsGatewayLogs.$inferSelect;
 
+export const customerNotificationLogs = mysqlTable("customerNotificationLogs", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId"),
+  supportRequestId: int("supportRequestId"),
+  deliveryReviewId: int("deliveryReviewId"),
+  phone: varchar("phone", { length: 32 }),
+  channel: mysqlEnum("channel", ["sms", "whatsapp"]).notNull(),
+  message: text("message").notNull(),
+  status: mysqlEnum("status", ["Planifiée", "Simulée", "Échouée"]).default("Planifiée").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type CustomerNotificationLog = typeof customerNotificationLogs.$inferSelect;
+
 export const drivers = mysqlTable("drivers", {
   id: int("id").autoincrement().primaryKey(),
   name: varchar("name", { length: 100 }).notNull(),
@@ -196,4 +210,16 @@ export const supportRequests = mysqlTable("supportRequests", {
 });
 
 export type DeliveryReview = typeof deliveryReviews.$inferSelect;
+export const supportMessages = mysqlTable("supportMessages", {
+  id: int("id").autoincrement().primaryKey(),
+  supportRequestId: int("supportRequestId").notNull(),
+  senderType: mysqlEnum("senderType", ["client", "support"]).notNull(),
+  senderId: int("senderId"),
+  senderName: varchar("senderName", { length: 255 }).notNull(),
+  message: text("message").notNull(),
+  readAt: timestamp("readAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
 export type SupportRequest = typeof supportRequests.$inferSelect;
+export type SupportMessage = typeof supportMessages.$inferSelect;

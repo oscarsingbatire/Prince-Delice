@@ -4,7 +4,7 @@ import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { products, deliveryZones, orders, orderItems, returns, users, reviews, salesReports, referrals, pushSubscriptions, userLoyalty, smsGatewayLogs, drivers, deliveryReviews, supportRequests } from "../drizzle/schema";
+import { products, deliveryZones, orders, orderItems, returns, users, reviews, salesReports, referrals, pushSubscriptions, userLoyalty, smsGatewayLogs, drivers, deliveryReviews, supportRequests, supportMessages, customerNotificationLogs } from "../drizzle/schema";
 import { eq, desc, and } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 
@@ -15,6 +15,14 @@ const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
   }
   return next({ ctx });
 });
+
+async function queueCustomerNotifications(db: Awaited<ReturnType<typeof getDb>>, input: { userId?: number | null; phone?: string | null; supportRequestId?: number; deliveryReviewId?: number; message: string }) {
+  if (!db) return;
+  await db.insert(customerNotificationLogs).values([
+    { userId: input.userId ?? null, supportRequestId: input.supportRequestId ?? null, deliveryReviewId: input.deliveryReviewId ?? null, phone: input.phone ?? null, channel: 'sms', message: input.message, status: 'Simulée' },
+    { userId: input.userId ?? null, supportRequestId: input.supportRequestId ?? null, deliveryReviewId: input.deliveryReviewId ?? null, phone: input.phone ?? null, channel: 'whatsapp', message: input.message, status: 'Simulée' },
+  ]);
+}
 
 export const appRouter = router({
   system: systemRouter,
@@ -364,7 +372,12 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         const db = await getDb();
         if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
+        const [review] = await db.select().from(deliveryReviews).where(eq(deliveryReviews.id, input.reviewId)).limit(1);
         await db.update(deliveryReviews).set({ status: input.status, ...(input.adminNotes !== undefined ? { adminNotes: input.adminNotes || null } : {}), ...(input.adminReply !== undefined ? { adminReply: input.adminReply || null } : {}) }).where(eq(deliveryReviews.id, input.reviewId));
+        if (review && (input.adminReply?.trim() || input.status !== review.status)) {
+          const [customer] = await db.select().from(users).where(eq(users.id, review.userId)).limit(1);
+          await queueCustomerNotifications(db, { userId: review.userId, phone: customer?.phone, deliveryReviewId: review.id, message: input.adminReply?.trim() || `Votre avis de livraison est maintenant : ${input.status}.` });
+        }
         return { success: true };
       }),
 
@@ -373,7 +386,7 @@ export const appRouter = router({
       .mutation(async ({ ctx, input }) => {
         const db = await getDb();
         if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
-        await db.insert(supportRequests).values({
+        const requestResult = await db.insert(supportRequests).values({
           userId: ctx.user?.id ?? null,
           userName: ctx.user?.name || 'Client invité',
           phone: input.phone || ctx.user?.phone || null,
@@ -381,27 +394,76 @@ export const appRouter = router({
           requiresExpert: /expert|conseiller|problème|réclamation|remboursement|attendre.*avis/i.test(input.message),
           status: 'Nouveau',
         });
-        return { success: true };
+        const requestId = (requestResult as any).insertId;
+        if (requestId) {
+          await db.insert(supportMessages).values({
+            supportRequestId: requestId,
+            senderType: 'client',
+            senderId: ctx.user?.id ?? null,
+            senderName: ctx.user?.name || 'Client invité',
+            message: input.message,
+          });
+        }
+        return { success: true, requestId };
       }),
 
     getSupportRequests: adminProcedure.query(async () => {
       const db = await getDb();
       if (!db) return [];
-      return await db.select().from(supportRequests).orderBy(desc(supportRequests.createdAt));
+      const requests = await db.select().from(supportRequests).orderBy(desc(supportRequests.createdAt));
+      return Promise.all(requests.map(async request => ({
+        ...request,
+        messages: await db.select().from(supportMessages).where(eq(supportMessages.supportRequestId, request.id)).orderBy(supportMessages.createdAt),
+      })));
     }),
 
     getMySupportRequests: protectedProcedure.query(async ({ ctx }) => {
       const db = await getDb();
       if (!db) return [];
-      return await db.select().from(supportRequests).where(eq(supportRequests.userId, ctx.user.id)).orderBy(desc(supportRequests.createdAt));
+      const requests = await db.select().from(supportRequests).where(eq(supportRequests.userId, ctx.user.id)).orderBy(desc(supportRequests.createdAt));
+      return Promise.all(requests.map(async request => ({
+        ...request,
+        messages: await db.select().from(supportMessages).where(eq(supportMessages.supportRequestId, request.id)).orderBy(supportMessages.createdAt),
+      })));
     }),
+
+    sendSupportMessage: protectedProcedure
+      .input(z.object({ supportRequestId: z.number(), message: z.string().trim().min(1).max(2000) }))
+      .mutation(async ({ ctx, input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
+        const [request] = await db.select().from(supportRequests).where(and(eq(supportRequests.id, input.supportRequestId), eq(supportRequests.userId, ctx.user.id))).limit(1);
+        if (!request) throw new TRPCError({ code: 'NOT_FOUND', message: 'Conversation introuvable.' });
+        await db.insert(supportMessages).values({
+          supportRequestId: input.supportRequestId,
+          senderType: 'client',
+          senderId: ctx.user.id,
+          senderName: ctx.user.name || 'Client Prince Délice',
+          message: input.message,
+        });
+        await db.update(supportRequests).set({ status: 'Nouveau' }).where(eq(supportRequests.id, input.supportRequestId));
+        return { success: true };
+      }),
 
     updateSupportRequestStatus: adminProcedure
       .input(z.object({ requestId: z.number(), status: z.enum(['Nouveau', 'En cours', 'Traité']), adminNotes: z.string().max(1000).optional(), adminReply: z.string().trim().max(1000).optional() }))
       .mutation(async ({ input }) => {
         const db = await getDb();
         if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
+        const [request] = await db.select().from(supportRequests).where(eq(supportRequests.id, input.requestId)).limit(1);
         await db.update(supportRequests).set({ status: input.status, ...(input.adminNotes !== undefined ? { adminNotes: input.adminNotes || null } : {}), ...(input.adminReply !== undefined ? { adminReply: input.adminReply || null } : {}) }).where(eq(supportRequests.id, input.requestId));
+        if (input.adminReply?.trim()) {
+          await db.insert(supportMessages).values({
+            supportRequestId: input.requestId,
+            senderType: 'support',
+            senderId: null,
+            senderName: 'Équipe Prince Délice',
+            message: input.adminReply.trim(),
+          });
+        }
+        if (request && (input.adminReply?.trim() || input.status !== request.status)) {
+          await queueCustomerNotifications(db, { userId: request.userId, phone: request.phone, supportRequestId: request.id, message: input.adminReply?.trim() || `Votre demande de support est maintenant : ${input.status}.` });
+        }
         return { success: true };
       }),
 

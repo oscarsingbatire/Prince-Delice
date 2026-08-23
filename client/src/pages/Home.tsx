@@ -26,6 +26,7 @@ export default function Home() {
   const [chatOpen, setChatOpen] = useState(false);
   const [chatMessages, setChatMessages] = useState<{ sender: 'user' | 'agent'; text: string }[]>([]);
   const [chatInput, setChatInput] = useState('');
+  const [activeSupportRequestId, setActiveSupportRequestId] = useState<number | null>(null);
   const [detectedNeighborhood, setDetectedNeighborhood] = useState<string | null>(null);
 
   const detectLocation = () => {
@@ -47,21 +48,35 @@ export default function Home() {
 
   const subscribePushMutation = trpc.shop.subscribePush.useMutation();
   const submitSupportRequestMutation = trpc.shop.submitSupportRequest.useMutation();
+  const sendSupportMessageMutation = trpc.shop.sendSupportMessage.useMutation();
+  const { data: supportRequests = [] } = trpc.shop.getMySupportRequests.useQuery(undefined, { enabled: isAuthenticated, refetchInterval: 15000 });
+
+  useEffect(() => {
+    const thread = supportRequests[0];
+    if (!thread) return;
+    setActiveSupportRequestId(thread.id);
+    if (thread.messages?.length) {
+      setChatMessages(thread.messages.map(message => ({ sender: message.senderType === 'support' ? 'agent' : 'user', text: message.message })));
+    }
+  }, [supportRequests]);
 
   const handleChatSend = async (content: string) => {
     const message = content.trim();
-    if (!message || submitSupportRequestMutation.isPending) return;
+    if (!message || submitSupportRequestMutation.isPending || sendSupportMessageMutation.isPending) return;
     setChatMessages(prev => [...prev, { sender: 'user', text: message }]);
     setChatInput('');
     try {
-      await submitSupportRequestMutation.mutateAsync({ message, phone: user?.phone || undefined });
-      const needsExpert = /expert|conseiller|problème|réclamation|remboursement/i.test(message);
-      setChatMessages(prev => [...prev, {
-        sender: 'agent',
-        text: needsExpert
-          ? "Votre demande a bien été transmise à notre équipe. Veuillez attendre l'avis d'un expert Prince Délice ; nous vous répondrons ici ou par WhatsApp au +236 72 89 89 38."
-          : "Merci pour votre message ! Notre équipe vous répondra rapidement ici ou par WhatsApp au +236 72 89 89 38."
-      }]);
+      const requestId = activeSupportRequestId ?? supportRequests[0]?.id;
+      if (requestId) {
+        await sendSupportMessageMutation.mutateAsync({ supportRequestId: requestId, message });
+        await utils.shop.getMySupportRequests.invalidate();
+      } else {
+        const result = await submitSupportRequestMutation.mutateAsync({ message, phone: user?.phone || undefined });
+        if (result.requestId) setActiveSupportRequestId(result.requestId);
+        const needsExpert = /expert|conseiller|problème|réclamation|remboursement/i.test(message);
+        setChatMessages(prev => [...prev, { sender: 'agent', text: needsExpert ? "Votre demande est enregistrée. Un expert Prince Délice vous répondra dans cette conversation." : "Votre conversation est ouverte. Notre équipe vous répondra ici rapidement." }]);
+        await utils.shop.getMySupportRequests.invalidate();
+      }
     } catch (err: any) {
       toast.error(err.message || "Votre message n'a pas pu être transmis.");
       setChatMessages(prev => [...prev, { sender: 'agent', text: "Nous n'avons pas pu enregistrer votre demande. Veuillez réessayer." }]);
@@ -580,10 +595,14 @@ export default function Home() {
         {chatOpen && (
           <div className="mb-3 w-80 bg-white rounded-2xl shadow-2xl border border-[#EADBC8] overflow-hidden flex flex-col">
             <div className="bg-[#1E3F20] text-white p-3.5 flex justify-between items-center">
-              <span className="font-serif font-bold text-sm flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-green-400 animate-pulse" /> Support Prince Délice
-              </span>
-              <button onClick={() => setChatOpen(false)} className="text-white hover:text-gray-200 text-sm font-bold">✕</button>
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="w-2.5 h-2.5 rounded-full bg-green-400 animate-pulse flex-shrink-0" />
+                <span className="font-serif font-bold text-sm truncate">Support Prince Délice</span>
+              </div>
+              <div className="flex items-center gap-2">
+                {isAuthenticated && <Link href="/account" className="text-[10px] underline whitespace-nowrap">Voir mes messages</Link>}
+                <button onClick={() => setChatOpen(false)} className="text-white hover:text-gray-200 text-sm font-bold">✕</button>
+              </div>
             </div>
             <div className="p-3 h-64 overflow-y-auto space-y-3 bg-[#FDFBF7] text-xs">
               <div className="bg-white p-2.5 rounded-xl border border-[#EADBC8] max-w-[85%] shadow-sm">
@@ -611,7 +630,7 @@ export default function Home() {
               />
               <Button
                 onClick={() => void handleChatSend(chatInput)}
-                disabled={submitSupportRequestMutation.isPending}
+                disabled={submitSupportRequestMutation.isPending || sendSupportMessageMutation.isPending}
                 className="bg-[#1E3F20] text-white px-3 py-2 text-xs"
               >
                 Envoyer

@@ -34,3 +34,15 @@ Bien vu — signalement utilisateur : les avis post-livraison et les demandes d'
 - [x] Ajouter une recherche administrative par client, commande ou numéro de téléphone
 - [x] Ajouter les tests des réponses, notifications et filtres de recherche
 - [x] Vérifier le build et sauvegarder un checkpoint des nouvelles fonctionnalités
+
+- [x] Ajouter une conversation persistante client-support dans Messages & Réponses
+- [x] Ajouter la réponse support côté administration dans la même conversation
+- [x] Ajouter des notifications SMS/WhatsApp lors des changements et réponses
+- [x] Ajouter pagination et export CSV des avis et tickets
+- [x] Ajouter des modèles de réponses rapides dans l’administration
+- [x] Ajouter les tests du chat, des notifications, de l’export et de la pagination
+- [x] Vérifier le build et sauvegarder un checkpoint des améliorations
+
+- [x] Déclencher côté serveur une notification persistée lors d’une réponse ou d’un changement de statut
+- [x] Ajouter un test de génération CSV et de découpage paginé des files admin
+- [x] Sauvegarder le checkpoint final après ces compléments
