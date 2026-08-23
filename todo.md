@@ -14,3 +14,17 @@
 - [x] Ajouter le programme de fidélité par points cumulés échangeables au panier
 - [x] Ajouter un tableau de bord analytique graphique avancé pour l'administrateur
 - [x] Ajouter la simulation de passerelle SMS pour les notifications et codes OTP
+
+- [x] Enregistrer côté serveur les avis post-livraison avec la note, le commentaire, la commande et le livreur
+- [x] Afficher les avis post-livraison dans le tableau de bord administrateur
+- [x] Enregistrer les demandes du centre de messagerie intelligent nécessitant l'avis d'un expert
+- [x] Afficher et suivre les demandes d'expertise du centre de messagerie dans l'administration
+- [x] Ajouter les tests Vitest des mutations et requêtes d'avis et de demandes d'expertise
+- [x] Vérifier le build et sauvegarder la correction
+
+Bien vu — signalement utilisateur : les avis post-livraison et les demandes d'attente d'un expert n'apparaissent pas dans l'administration.
+- [x] Persister le lien livreur par commande afin de conserver l’association pour les avis post-livraison
+- [x] Ajouter une catégorie serveur explicite pour distinguer les demandes nécessitant un expert
+- [x] Afficher un filtre et un indicateur dédiés aux demandes expertes dans l’administration
+- [x] Compléter les tests de succès et de mise à jour des statuts
+- [x] Sauvegarder un nouveau checkpoint après ces corrections

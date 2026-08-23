@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -20,8 +21,10 @@ export default function CustomerAccountPage() {
 
   const { data: orders = [] } = trpc.shop.getUserOrders.useQuery(undefined, { enabled: isAuthenticated });
   const { data: returns = [] } = trpc.shop.getUserReturns.useQuery(undefined, { enabled: isAuthenticated });
+  const { data: deliveryReviews = [] } = trpc.shop.getMyDeliveryReviews.useQuery(undefined, { enabled: isAuthenticated });
   const updateMfaMutation = trpc.auth.updateMfa.useMutation();
   const submitReturnMutation = trpc.shop.submitReturn.useMutation();
+  const submitDeliveryReviewMutation = trpc.shop.submitDeliveryReview.useMutation();
   const sendSmsOtpMutation = trpc.shop.sendSmsOtp.useMutation();
 
   const [mfaEnabled, setMfaEnabled] = useState(user?.mfaEnabled || false);
@@ -33,6 +36,7 @@ export default function CustomerAccountPage() {
   const [returnReason, setReturnReason] = useState("");
   const [returnPhotoUrl, setReturnPhotoUrl] = useState("");
   const [isSubmittingReturn, setIsSubmittingReturn] = useState(false);
+  const [reviewDrafts, setReviewDrafts] = useState<Record<number, { rating: number; comment: string }>>({});
 
   if (!isAuthenticated) {
     return (
@@ -294,57 +298,73 @@ export default function CustomerAccountPage() {
 
                         {ord.status === 'Livrée' && (
                           <div className="p-4 bg-white rounded-xl border border-[#EADBC8] space-y-3">
-                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-[#EADBC8]/50 pb-3">
-                              <div>
-                                <p className="text-xs font-bold text-[#1E3F20]">⭐ Noter la qualité de livraison</p>
-                                <p className="text-[11px] text-muted-foreground">Livreur : {ord.driver ? ord.driver.name : "Jean-Marc"}</p>
+                            {deliveryReviews.some(review => review.orderId === ord.id) ? (
+                              <div className="rounded-lg bg-green-50 border border-green-200 p-3">
+                                <p className="text-xs font-bold text-green-800">✅ Votre avis a été transmis à l’administration.</p>
+                                <p className="text-[11px] text-green-700 mt-1">Merci pour votre retour. Notre équipe peut maintenant le consulter et le traiter.</p>
                               </div>
-                              <div className="flex gap-1">
-                                {[1, 2, 3, 4, 5].map(star => (
-                                  <button
-                                    key={star}
-                                    onClick={() => toast.success(`Merci ! Note de ${star}/5 étoiles enregistrée pour le livreur.`)}
-                                    className="text-amber-500 hover:scale-125 transition text-xl px-1"
-                                    title={`Noter ${star} étoiles`}
-                                  >
-                                    ★
-                                  </button>
-                                ))}
-                              </div>
-                            </div>
-
-                            {/* Comment / review text input */}
-                            <div className="space-y-1.5 pt-1">
-                              <label className="text-xs font-medium text-[#1E3F20]">Votre avis ou description du problème :</label>
-                              <div className="flex gap-2">
-                                <input
-                                  type="text"
-                                  placeholder="Ex: Livreur très ponctuel, fruits excellents et frais..."
-                                  className="flex-1 text-xs px-3 py-2 rounded-lg border border-[#EADBC8] bg-[#FAF6F0] focus:outline-none focus:ring-1 focus:ring-[#1E3F20]"
-                                  onKeyDown={(e) => {
-                                    if (e.key === 'Enter') {
-                                      toast.success("Votre commentaire a bien été enregistré. Merci !");
-                                      (e.target as HTMLInputElement).value = "";
-                                    }
-                                  }}
-                                />
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    const input = (e.currentTarget.previousElementSibling as HTMLInputElement);
-                                    if (input && input.value.trim()) {
-                                      toast.success("Votre commentaire a bien été enregistré. Merci !");
-                                      input.value = "";
-                                    } else {
-                                      toast.error("Veuillez saisir un commentaire.");
-                                    }
-                                  }}
-                                  className="text-xs bg-[#1E3F20] text-white px-3 py-2 rounded-lg hover:bg-[#152e17] transition"
-                                >
-                                  Envoyer
-                                </button>
-                              </div>
-                            </div>
+                            ) : (
+                              <>
+                                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-[#EADBC8]/50 pb-3">
+                                  <div>
+                                    <p className="text-xs font-bold text-[#1E3F20]">⭐ Noter la qualité de livraison</p>
+                                    <p className="text-[11px] text-muted-foreground">Livreur : {ord.driver ? ord.driver.name : "Jean-Marc"}</p>
+                                  </div>
+                                  <div className="flex gap-1" aria-label="Choisir une note de 1 à 5 étoiles">
+                                    {[1, 2, 3, 4, 5].map(star => (
+                                      <button
+                                        key={star}
+                                        type="button"
+                                        onClick={() => setReviewDrafts(prev => ({ ...prev, [ord.id]: { rating: star, comment: prev[ord.id]?.comment || "" } }))}
+                                        className={`transition text-xl px-1 ${star <= (reviewDrafts[ord.id]?.rating || 0) ? "text-amber-500" : "text-gray-300"} hover:scale-125`}
+                                        title={`Noter ${star} étoiles`}
+                                      >
+                                        ★
+                                      </button>
+                                    ))}
+                                  </div>
+                                </div>
+                                <div className="space-y-1.5 pt-1">
+                                  <label htmlFor={`review-${ord.id}`} className="text-xs font-medium text-[#1E3F20]">Votre avis ou description du problème :</label>
+                                  <Textarea
+                                    id={`review-${ord.id}`}
+                                    value={reviewDrafts[ord.id]?.comment || ""}
+                                    onChange={e => setReviewDrafts(prev => ({ ...prev, [ord.id]: { rating: prev[ord.id]?.rating || 0, comment: e.target.value } }))}
+                                    placeholder="Ex : Livreur ponctuel, fruits frais... ou décrivez le problème rencontré."
+                                    className="min-h-20 text-xs bg-[#FAF6F0] border-[#EADBC8]"
+                                    maxLength={1000}
+                                  />
+                                  <div className="flex justify-end">
+                                    <button
+                                      type="button"
+                                      disabled={submitDeliveryReviewMutation.isPending}
+                                      onClick={async () => {
+                                        const draft = reviewDrafts[ord.id];
+                                        if (!draft?.rating) {
+                                          toast.error("Veuillez choisir une note entre 1 et 5 étoiles.");
+                                          return;
+                                        }
+                                        if (!draft.comment.trim()) {
+                                          toast.error("Veuillez écrire un commentaire.");
+                                          return;
+                                        }
+                                        try {
+                                          await submitDeliveryReviewMutation.mutateAsync({ orderId: ord.id, rating: draft.rating, comment: draft.comment });
+                                          toast.success("Votre avis a été transmis à l’administration.");
+                                          setReviewDrafts(prev => ({ ...prev, [ord.id]: { rating: 0, comment: "" } }));
+                                          utils.shop.getMyDeliveryReviews.invalidate();
+                                        } catch (err: any) {
+                                          toast.error(err.message || "Impossible d’enregistrer votre avis.");
+                                        }
+                                      }}
+                                      className="text-xs bg-[#1E3F20] text-white px-3 py-2 rounded-lg hover:bg-[#152e17] transition disabled:opacity-50"
+                                    >
+                                      {submitDeliveryReviewMutation.isPending ? "Envoi..." : "Envoyer mon avis"}
+                                    </button>
+                                  </div>
+                                </div>
+                              </>
+                            )}
 
                             <div className="flex items-center justify-between pt-2 border-t border-[#EADBC8]/40">
                               <span className="text-xs text-muted-foreground">Besoin d'un retour ou d'un échange ?</span>

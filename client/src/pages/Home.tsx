@@ -46,6 +46,27 @@ export default function Home() {
   };
 
   const subscribePushMutation = trpc.shop.subscribePush.useMutation();
+  const submitSupportRequestMutation = trpc.shop.submitSupportRequest.useMutation();
+
+  const handleChatSend = async (content: string) => {
+    const message = content.trim();
+    if (!message || submitSupportRequestMutation.isPending) return;
+    setChatMessages(prev => [...prev, { sender: 'user', text: message }]);
+    setChatInput('');
+    try {
+      await submitSupportRequestMutation.mutateAsync({ message, phone: user?.phone || undefined });
+      const needsExpert = /expert|conseiller|problème|réclamation|remboursement/i.test(message);
+      setChatMessages(prev => [...prev, {
+        sender: 'agent',
+        text: needsExpert
+          ? "Votre demande a bien été transmise à notre équipe. Veuillez attendre l'avis d'un expert Prince Délice ; nous vous répondrons ici ou par WhatsApp au +236 72 89 89 38."
+          : "Merci pour votre message ! Notre équipe vous répondra rapidement ici ou par WhatsApp au +236 72 89 89 38."
+      }]);
+    } catch (err: any) {
+      toast.error(err.message || "Votre message n'a pas pu être transmis.");
+      setChatMessages(prev => [...prev, { sender: 'agent', text: "Nous n'avons pas pu enregistrer votre demande. Veuillez réessayer." }]);
+    }
+  };
 
   const formatPrice = (priceInXaf: number) => {
     if (currency === "EUR") {
@@ -582,26 +603,15 @@ export default function Home() {
                 onChange={e => setChatInput(e.target.value)}
                 onKeyDown={e => {
                   if (e.key === 'Enter' && chatInput.trim()) {
-                    setChatMessages([...chatMessages, { sender: 'user', text: chatInput }]);
-                    setChatInput('');
-                    setTimeout(() => {
-                      setChatMessages(prev => [...prev, { sender: 'agent', text: "Merci pour votre message ! Un conseiller vous répondra instantanément ou vous contactera par WhatsApp au +23672898938." }]);
-                    }, 1000);
+                    void handleChatSend(chatInput);
                   }
                 }}
                 placeholder="Tapez votre message..."
                 className="flex-1 px-3 py-2 border border-[#EADBC8] rounded-lg text-xs focus:outline-none"
               />
               <Button
-                onClick={() => {
-                  if (chatInput.trim()) {
-                    setChatMessages([...chatMessages, { sender: 'user', text: chatInput }]);
-                    setChatInput('');
-                    setTimeout(() => {
-                      setChatMessages(prev => [...prev, { sender: 'agent', text: "Merci pour votre message ! Un conseiller vous répondra instantanément." }]);
-                    }, 1000);
-                  }
-                }}
+                onClick={() => void handleChatSend(chatInput)}
+                disabled={submitSupportRequestMutation.isPending}
                 className="bg-[#1E3F20] text-white px-3 py-2 text-xs"
               >
                 Envoyer

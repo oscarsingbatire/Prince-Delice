@@ -4,8 +4,8 @@ import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { products, deliveryZones, orders, orderItems, returns, users, reviews, salesReports, referrals, pushSubscriptions, userLoyalty, smsGatewayLogs, drivers } from "../drizzle/schema";
-import { eq, desc } from "drizzle-orm";
+import { products, deliveryZones, orders, orderItems, returns, users, reviews, salesReports, referrals, pushSubscriptions, userLoyalty, smsGatewayLogs, drivers, deliveryReviews, supportRequests } from "../drizzle/schema";
+import { eq, desc, and } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 
 // Helper admin check
@@ -242,6 +242,7 @@ export const appRouter = router({
           paymentStatus: input.paymentMethod === 'cash_on_delivery' ? 'pending' : 'paid',
           deliveryFee: input.deliveryFee,
           totalAmount: input.totalAmount,
+          driverId: input.driverId ?? null,
           status: "Validée",
         });
 
@@ -283,8 +284,10 @@ export const appRouter = router({
       const result = [];
       for (const ord of userOrders) {
         const items = await db.select().from(orderItems).where(eq(orderItems.orderId, ord.id));
-        // Trouver le livreur assigné à cette commande s'il existe
-        const [assignedDriver] = await db.select().from(drivers).where(eq(drivers.assignedOrderId, ord.id));
+        // Conserver le livreur historique de la commande, même après la fin de tournée
+        const [assignedDriver] = ord.driverId
+          ? await db.select().from(drivers).where(eq(drivers.id, ord.driverId)).limit(1)
+          : await db.select().from(drivers).where(eq(drivers.assignedOrderId, ord.id)).limit(1);
         result.push({ ...ord, items, driver: assignedDriver || null });
       }
       return result;
@@ -314,6 +317,87 @@ export const appRouter = router({
       if (!db) return [];
       return await db.select().from(returns).where(eq(returns.userId, ctx.user.id)).orderBy(desc(returns.createdAt));
     }),
+
+    submitDeliveryReview: protectedProcedure
+      .input(z.object({
+        orderId: z.number(),
+        rating: z.number().int().min(1).max(5),
+        comment: z.string().trim().min(3).max(1000),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
+        const [order] = await db.select().from(orders).where(and(eq(orders.id, input.orderId), eq(orders.userId, ctx.user.id))).limit(1);
+        if (!order) throw new TRPCError({ code: 'NOT_FOUND', message: 'Commande introuvable.' });
+        if (order.status !== 'Livrée') throw new TRPCError({ code: 'BAD_REQUEST', message: 'La commande doit être livrée avant de laisser un avis.' });
+        const existing = await db.select().from(deliveryReviews).where(and(eq(deliveryReviews.orderId, input.orderId), eq(deliveryReviews.userId, ctx.user.id))).limit(1);
+        if (existing.length > 0) throw new TRPCError({ code: 'CONFLICT', message: 'Un avis existe déjà pour cette commande.' });
+        const [assignedDriver] = order.driverId
+          ? await db.select().from(drivers).where(eq(drivers.id, order.driverId)).limit(1)
+          : await db.select().from(drivers).where(eq(drivers.assignedOrderId, input.orderId)).limit(1);
+        await db.insert(deliveryReviews).values({
+          orderId: input.orderId,
+          userId: ctx.user.id,
+          driverId: order.driverId ?? assignedDriver?.id ?? null,
+          userName: ctx.user.name || 'Client Prince Délice',
+          rating: input.rating,
+          comment: input.comment,
+          status: 'Nouveau',
+        });
+        return { success: true };
+      }),
+
+    getMyDeliveryReviews: protectedProcedure.query(async ({ ctx }) => {
+      const db = await getDb();
+      if (!db) return [];
+      return await db.select().from(deliveryReviews).where(eq(deliveryReviews.userId, ctx.user.id)).orderBy(desc(deliveryReviews.createdAt));
+    }),
+
+    getAdminDeliveryReviews: adminProcedure.query(async () => {
+      const db = await getDb();
+      if (!db) return [];
+      return await db.select().from(deliveryReviews).orderBy(desc(deliveryReviews.createdAt));
+    }),
+
+    updateDeliveryReviewStatus: adminProcedure
+      .input(z.object({ reviewId: z.number(), status: z.enum(['Nouveau', 'En cours', 'Traité']), adminNotes: z.string().max(1000).optional() }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
+        await db.update(deliveryReviews).set({ status: input.status, adminNotes: input.adminNotes ?? null }).where(eq(deliveryReviews.id, input.reviewId));
+        return { success: true };
+      }),
+
+    submitSupportRequest: publicProcedure
+      .input(z.object({ message: z.string().trim().min(3).max(2000), phone: z.string().max(32).optional() }))
+      .mutation(async ({ ctx, input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
+        await db.insert(supportRequests).values({
+          userId: ctx.user?.id ?? null,
+          userName: ctx.user?.name || 'Client invité',
+          phone: input.phone || ctx.user?.phone || null,
+          message: input.message,
+          requiresExpert: /expert|conseiller|problème|réclamation|remboursement|attendre.*avis/i.test(input.message),
+          status: 'Nouveau',
+        });
+        return { success: true };
+      }),
+
+    getSupportRequests: adminProcedure.query(async () => {
+      const db = await getDb();
+      if (!db) return [];
+      return await db.select().from(supportRequests).orderBy(desc(supportRequests.createdAt));
+    }),
+
+    updateSupportRequestStatus: adminProcedure
+      .input(z.object({ requestId: z.number(), status: z.enum(['Nouveau', 'En cours', 'Traité']), adminNotes: z.string().max(1000).optional() }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
+        await db.update(supportRequests).set({ status: input.status, adminNotes: input.adminNotes ?? null }).where(eq(supportRequests.id, input.requestId));
+        return { success: true };
+      }),
 
     getStats: adminProcedure.query(async () => {
       const db = await getDb();
@@ -644,7 +728,7 @@ export const appRouter = router({
           .where(eq(drivers.id, input.driverId));
         // Update order status
         await db.update(orders)
-          .set({ status: 'En cours de livraison' })
+          .set({ status: 'En cours de livraison', driverId: input.driverId })
           .where(eq(orders.id, input.orderId));
         return { success: true };
       }),

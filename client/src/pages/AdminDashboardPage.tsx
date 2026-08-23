@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Package, DollarSign, AlertTriangle, ShieldCheck, Truck, Plus, CheckCircle, XCircle } from "lucide-react";
+import { Package, DollarSign, AlertTriangle, ShieldCheck, Truck, Plus, CheckCircle, XCircle, Star, MessageCircle } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,11 +31,15 @@ export default function AdminDashboardPage() {
   const { data: stats } = trpc.shop.getStats.useQuery(undefined, { enabled: isAuthenticated && user?.role === 'admin' });
   const { data: orders = [] } = trpc.shop.getAllOrders.useQuery(undefined, { enabled: isAuthenticated && user?.role === 'admin' });
   const { data: returns = [] } = trpc.shop.getAllReturns.useQuery(undefined, { enabled: isAuthenticated && user?.role === 'admin' });
+  const { data: deliveryReviews = [] } = trpc.shop.getAdminDeliveryReviews.useQuery(undefined, { enabled: isAuthenticated && user?.role === 'admin' });
+  const { data: supportRequests = [] } = trpc.shop.getSupportRequests.useQuery(undefined, { enabled: isAuthenticated && user?.role === 'admin' });
   const { data: products = [] } = trpc.shop.getProducts.useQuery();
 
   const updateStatusMutation = trpc.shop.updateOrderStatus.useMutation();
   const deleteOrderMutation = trpc.shop.deleteOrder.useMutation();
   const processReturnMutation = trpc.shop.processReturn.useMutation();
+  const updateDeliveryReviewStatusMutation = trpc.shop.updateDeliveryReviewStatus.useMutation();
+  const updateSupportRequestStatusMutation = trpc.shop.updateSupportRequestStatus.useMutation();
 
   const [orderToDelete, setOrderToDelete] = useState<number | null>(null);
 
@@ -77,6 +81,7 @@ export default function AdminDashboardPage() {
   const deleteDriverMutation = trpc.shop.deleteDriver.useMutation();
 
   const [paidDrivers, setPaidDrivers] = useState<Record<number, { paid: boolean; date: string }>>({});
+  const [supportFilter, setSupportFilter] = useState<"all" | "expert">("all");
 
   const [driverName, setDriverName] = useState("");
   const [driverPhone, setDriverPhone] = useState("");
@@ -119,6 +124,26 @@ export default function AdminDashboardPage() {
       utils.shop.getDrivers.invalidate();
     } catch {
       toast.error("Erreur lors de la mise à jour du statut.");
+    }
+  };
+
+  const handleDeliveryReviewStatus = async (reviewId: number, status: "Nouveau" | "En cours" | "Traité") => {
+    try {
+      await updateDeliveryReviewStatusMutation.mutateAsync({ reviewId, status });
+      toast.success("Statut de l'avis mis à jour.");
+      utils.shop.getAdminDeliveryReviews.invalidate();
+    } catch {
+      toast.error("Impossible de mettre à jour l'avis.");
+    }
+  };
+
+  const handleSupportRequestStatus = async (requestId: number, status: "Nouveau" | "En cours" | "Traité") => {
+    try {
+      await updateSupportRequestStatusMutation.mutateAsync({ requestId, status });
+      toast.success("Statut de la demande mis à jour.");
+      utils.shop.getSupportRequests.invalidate();
+    } catch {
+      toast.error("Impossible de mettre à jour la demande.");
     }
   };
 
@@ -285,6 +310,8 @@ export default function AdminDashboardPage() {
             <TabsTrigger value="orders">Commandes</TabsTrigger>
             <TabsTrigger value="stocks">Catalogue & Stocks</TabsTrigger>
             <TabsTrigger value="returns">Retours & Réclamations</TabsTrigger>
+            <TabsTrigger value="reviews">Avis clients</TabsTrigger>
+            <TabsTrigger value="support">Messagerie & Experts</TabsTrigger>
             <TabsTrigger value="delivery">Zones de Livraison</TabsTrigger>
             <TabsTrigger value="drivers">Équipe & Suivi Livreurs</TabsTrigger>
             <TabsTrigger value="reports">Rapports de Vente</TabsTrigger>
@@ -516,7 +543,93 @@ export default function AdminDashboardPage() {
             )}
           </TabsContent>
 
-          {/* 4. Delivery Zones */}
+          {/* 4. Customer delivery reviews */}
+          <TabsContent value="reviews" className="space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <h2 className="text-xl font-serif font-semibold text-[#1E3F20]">Avis post-livraison</h2>
+                <p className="text-sm text-muted-foreground">Les notes et commentaires transmis après une commande livrée.</p>
+              </div>
+              <Badge className="bg-amber-100 text-amber-800">{deliveryReviews.length} avis</Badge>
+            </div>
+            {deliveryReviews.length === 0 ? (
+              <Card className="border-[#EADBC8] bg-white"><CardContent className="p-6 text-sm text-muted-foreground">Aucun avis post-livraison reçu pour le moment.</CardContent></Card>
+            ) : (
+              <div className="space-y-4">
+                {deliveryReviews.map(review => (
+                  <Card key={review.id} className="border-[#EADBC8] bg-white shadow-sm">
+                    <CardHeader className="pb-3 border-b border-[#EADBC8] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div>
+                        <CardTitle className="font-serif text-base text-[#1E3F20] flex items-center gap-2"><Star className="w-4 h-4 fill-amber-400 text-amber-500" /> Avis de {review.userName}</CardTitle>
+                        <p className="text-xs text-muted-foreground mt-1">Commande #{review.orderId} • {review.driverId ? `Livreur #${review.driverId}` : 'Livreur non associé'} • {new Date(review.createdAt).toLocaleString('fr-FR')}</p>
+                      </div>
+                      <Select value={review.status} onValueChange={(value: "Nouveau" | "En cours" | "Traité") => handleDeliveryReviewStatus(review.id, value)}>
+                        <SelectTrigger className="w-full sm:w-32 text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Nouveau">Nouveau</SelectItem>
+                          <SelectItem value="En cours">En cours</SelectItem>
+                          <SelectItem value="Traité">Traité</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </CardHeader>
+                    <CardContent className="pt-4 space-y-2">
+                      <div className="text-amber-500 tracking-widest" aria-label={`Note : ${review.rating} sur 5`}>{'★'.repeat(review.rating)}<span className="text-gray-300">{'★'.repeat(5 - review.rating)}</span></div>
+                      <p className="text-sm text-[#2C221E] whitespace-pre-wrap">{review.comment}</p>
+                      {review.adminNotes && <p className="text-xs text-muted-foreground bg-muted rounded p-2">Note interne : {review.adminNotes}</p>}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+
+          {/* 5. Intelligent messaging and expert requests */}
+          <TabsContent value="support" className="space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <h2 className="text-xl font-serif font-semibold text-[#1E3F20]">Messagerie & demandes d’experts</h2>
+                <p className="text-sm text-muted-foreground">Les messages du centre intelligent nécessitant une réponse de l’équipe.</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge className="bg-blue-100 text-blue-800">{supportRequests.length} demande{supportRequests.length > 1 ? 's' : ''}</Badge>
+                <Badge className="bg-red-100 text-red-800">{supportRequests.filter(request => request.requiresExpert).length} expert{supportRequests.filter(request => request.requiresExpert).length > 1 ? 's' : ''}</Badge>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button type="button" size="sm" variant={supportFilter === "all" ? "default" : "outline"} onClick={() => setSupportFilter("all")} className={supportFilter === "all" ? "bg-[#1E3F20] text-white" : "border-[#EADBC8]"}>Toutes les demandes</Button>
+              <Button type="button" size="sm" variant={supportFilter === "expert" ? "default" : "outline"} onClick={() => setSupportFilter("expert")} className={supportFilter === "expert" ? "bg-red-600 text-white" : "border-[#EADBC8]"}>Demandes expertes uniquement</Button>
+            </div>
+            {supportRequests.filter(request => supportFilter === "all" || request.requiresExpert).length === 0 ? (
+              <Card className="border-[#EADBC8] bg-white"><CardContent className="p-6 text-sm text-muted-foreground">{supportFilter === "expert" ? "Aucune demande nécessitant l'avis d'un expert." : "Aucune demande de support enregistrée."}</CardContent></Card>
+            ) : (
+              <div className="space-y-4">
+                {supportRequests.filter(request => supportFilter === "all" || request.requiresExpert).map(request => (
+                  <Card key={request.id} className="border-[#EADBC8] bg-white shadow-sm">
+                    <CardHeader className="pb-3 border-b border-[#EADBC8] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div>
+                        <CardTitle className="font-serif text-base text-[#1E3F20] flex items-center gap-2"><MessageCircle className="w-4 h-4 text-[#1E3F20]" /> Demande #{request.id} — {request.userName} {request.requiresExpert && <Badge className="bg-red-100 text-red-800 text-[10px]">Avis expert requis</Badge>}</CardTitle>
+                        <p className="text-xs text-muted-foreground mt-1">{request.phone || 'Téléphone non communiqué'} • {new Date(request.createdAt).toLocaleString('fr-FR')}</p>
+                      </div>
+                      <Select value={request.status} onValueChange={(value: "Nouveau" | "En cours" | "Traité") => handleSupportRequestStatus(request.id, value)}>
+                        <SelectTrigger className="w-full sm:w-32 text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Nouveau">Nouveau</SelectItem>
+                          <SelectItem value="En cours">En cours</SelectItem>
+                          <SelectItem value="Traité">Traité</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </CardHeader>
+                    <CardContent className="pt-4">
+                      <p className="text-sm whitespace-pre-wrap text-[#2C221E]">{request.message}</p>
+                      {request.adminNotes && <p className="text-xs text-muted-foreground bg-muted rounded p-2 mt-3">Note interne : {request.adminNotes}</p>}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+
+          {/* 6. Delivery Zones */}
           <TabsContent value="delivery" className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               <Card className="border-[#EADBC8] bg-white shadow-sm">

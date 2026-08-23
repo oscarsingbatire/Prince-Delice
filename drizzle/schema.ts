@@ -51,6 +51,7 @@ export const orders = mysqlTable("orders", {
   neighborhood: varchar("neighborhood", { length: 100 }).notNull(),
   totalAmount: decimal("totalAmount", { precision: 10, scale: 2 }).notNull(),
   deliveryFee: decimal("deliveryFee", { precision: 10, scale: 2 }).notNull(),
+  driverId: int("driverId"),
   paymentMethod: mysqlEnum("paymentMethod", ["orange_money", "visa_mastercard", "cash_on_delivery"]).notNull(),
   paymentStatus: mysqlEnum("paymentStatus", ["pending", "paid", "failed"]).default("pending").notNull(),
   status: mysqlEnum("status", ["Validée", "En préparation", "En cours de livraison", "Livrée"]).default("Validée").notNull(),
@@ -164,3 +165,33 @@ export const drivers = mysqlTable("drivers", {
 });
 
 export type Driver = typeof drivers.$inferSelect;
+
+export const deliveryReviews = mysqlTable("deliveryReviews", {
+  id: int("id").autoincrement().primaryKey(),
+  orderId: int("orderId").notNull(),
+  userId: int("userId").notNull(),
+  driverId: int("driverId"),
+  userName: varchar("userName", { length: 255 }).notNull(),
+  rating: int("rating").notNull(),
+  comment: text("comment").notNull(),
+  status: mysqlEnum("status", ["Nouveau", "En cours", "Traité"]).default("Nouveau").notNull(),
+  adminNotes: text("adminNotes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export const supportRequests = mysqlTable("supportRequests", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId"),
+  userName: varchar("userName", { length: 255 }).notNull(),
+  phone: varchar("phone", { length: 32 }),
+  message: text("message").notNull(),
+  requiresExpert: boolean("requiresExpert").default(false).notNull(),
+  status: mysqlEnum("status", ["Nouveau", "En cours", "Traité"]).default("Nouveau").notNull(),
+  adminNotes: text("adminNotes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type DeliveryReview = typeof deliveryReviews.$inferSelect;
+export type SupportRequest = typeof supportRequests.$inferSelect;
