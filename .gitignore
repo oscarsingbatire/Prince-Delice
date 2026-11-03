@@ -3,16 +3,21 @@
 .pnpm-store/
 
 # Build outputs
-dist/
-build/
+/dist/
+/build/
 *.dist
+# Generated build archive; keep source and lockfile in Git instead.
+/dist.zip
 
-# Environment variables
+# Environment files: allow only the safe template.
 .env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env.*
+!.env.example
+
+# Manus runtime logs and generated project metadata
+.manus-logs/
+client/public/__manus__/version.json
+.project-config.json
 
 # IDE and editor files
 .vscode/
@@ -31,7 +36,7 @@ ehthumbs.db
 Thumbs.db
 
 # Logs
-logs
+logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
@@ -46,69 +51,40 @@ pids
 *.pid.lock
 *.bak
 
-# Coverage directory used by tools like istanbul
+# Coverage
 coverage/
 *.lcov
+.nyc_output/
 
-# nyc test coverage
-.nyc_output
-
-# Dependency directories
+# Dependency/tool caches
 jspm_packages/
-
-# TypeScript cache
 *.tsbuildinfo
-
-# Optional npm cache directory
-.npm
-
-# Optional eslint cache
+.npm/
 .eslintcache
-
-# Microbundle cache
 .rpt2_cache/
 .rts2_cache_cjs/
 .rts2_cache_es/
 .rts2_cache_umd/
-
-# Optional REPL history
 .node_repl_history
+.cache/
+.parcel-cache/
 
-# Output of 'npm pack'
+# Package output
 *.tgz
-
-# Yarn Integrity file
 .yarn-integrity
 
-# parcel-bundler cache (https://parceljs.org/)
-.cache
-.parcel-cache
-
-# Next.js build output
-.next
-
-# Nuxt.js build / generate output
-.nuxt
-
-# Gatsby files
-.cache/
-
-# Storybook build outputs
-.out
-.storybook-out
+# Framework/build output
+.next/
+.nuxt/
+.out/
+.storybook-out/
 
 # Temporary folders
 tmp/
 temp/
 
-# Database
+# Local databases and webdev artifacts
 *.db
 *.sqlite
 *.sqlite3
-
-# Webdev artifacts (checkpoint zips, migrations, etc.)
 .webdev/
-
-# Manus version file (auto-generated, not part of source)
-client/public/__manus__/version.json
-.project-config.json

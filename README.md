@@ -1,89 +1,75 @@
 # Fruits Centrafrique
 
-Application web de vente et de gestion de commandes de fruits frais, conçue pour le marché de Bangui, en République centrafricaine. Le dépôt contient une interface React/TypeScript, une API Node.js/Express avec tRPC et une couche de données MySQL utilisant Drizzle ORM.
+Application web de commerce et de gestion de commandes de fruits frais, destinée au marché de Bangui, en République centrafricaine. Le dépôt contient une interface React/TypeScript, une API Node.js/Express avec tRPC et une couche de données MySQL gérée avec Drizzle ORM. Certains documents du projet utilisent aussi le nom « Prince Délice ».
 
-> **État et limites importantes** — Ce dépôt est le code source d’un projet applicatif ; sa présence sur GitHub ne signifie pas que toutes les intégrations sont prêtes pour une exploitation commerciale. Les paiements Orange Money et par carte, les SMS/OTP et certaines notifications peuvent être simulés ou dépendre de services externes. Ne les considérez pas comme des transactions réelles sans intégrer et tester les fournisseurs correspondants. L’authentification, le stockage et certaines fonctions de développement utilisent des composants Manus ; un déploiement indépendant peut nécessiter leur remplacement ou leur configuration.
+> **À lire avant tout déploiement :** le code contient des intégrations liées à Manus/Forge et des parcours de démonstration. La présence d’un écran ou d’un mode de paiement dans l’interface ne signifie pas qu’un fournisseur de paiement réel est connecté. Les paiements, OTP/SMS et notifications doivent être configurés auprès de fournisseurs adaptés, puis testés avant tout usage réel. L’authentification OAuth dépend également d’un serveur OAuth configuré. Ne traite pas ce dépôt comme prêt pour une exploitation commerciale sans audit et tests de sécurité.
 
 ## Fonctionnalités
 
-Selon les modules présents dans le projet, l’application comprend notamment :
+Le projet comprend des modules pour le catalogue, le panier et les commandes, les stocks et zones de livraison, les retours, l’administration, les avis et les demandes de support. Leur fonctionnement effectif dépend de la configuration de l’application, de la base de données et des services externes.
 
-- catalogue de produits, panier et parcours de commande ;
-- gestion de commandes, stocks, zones de livraison et retours ;
-- interface d’administration, avis et demandes d’assistance ;
-- prise en charge d’une base MySQL via Drizzle ORM ;
-- interface React et API tRPC.
-
-La disponibilité effective de chaque fonction dépend de la configuration, des services externes et de l’environnement d’exécution.
-
-## Technologies
+## Stack technique
 
 - React, TypeScript et Vite
 - Node.js, Express et tRPC
-- MySQL et Drizzle ORM
+- MySQL/TiDB avec Drizzle ORM
 - pnpm, Vitest et Prettier
 
 ## Prérequis
 
-- Node.js compatible avec les dépendances du projet ;
-- pnpm (la version déclarée dans `package.json` est `pnpm@10.4.1`) ;
-- MySQL/TiDB pour les fonctions nécessitant la base de données.
+- Node.js compatible avec les dépendances du projet
+- Corepack et pnpm (la version `packageManager` du projet est `pnpm@10.4.1`)
+- MySQL ou TiDB si tu veux utiliser les fonctions nécessitant la base de données
 
-## Installation et commandes
+## Installation
 
 ```bash
 corepack enable
 pnpm install
+cp .env.example .env
+```
+
+Modifie ensuite `.env` avec les paramètres de ton environnement. Ne partage pas ce fichier et ne le committe jamais. Pour démarrer le serveur de développement :
+
+```bash
 pnpm dev
 ```
 
-Autres commandes disponibles :
+## Variables d’environnement
+
+Le fichier [`.env.example`](.env.example) liste les variables reconnues par la configuration serveur. Les paramètres OAuth et Manus/Forge sont requis uniquement pour les fonctionnalités qui s’appuient sur ces services. `VITE_APP_ID` est un identifiant utilisé par l’application, pas un emplacement pour une clé secrète : toute variable préfixée par `VITE_` peut être intégrée au bundle client.
+
+Génère un `JWT_SECRET` aléatoire et privé pour chaque environnement. Utilise une base de données de développement pour les essais. Les migrations peuvent modifier les données : vérifie la cible et sauvegarde la base avant toute migration, en particulier avant `pnpm db:push`.
+
+## Commandes
 
 ```bash
-pnpm check       # Vérification TypeScript
-pnpm test        # Tests Vitest
-pnpm build       # Build du client et du serveur
-pnpm start       # Démarrage du build de production
-pnpm db:push     # Génération puis application des migrations Drizzle
+pnpm dev       # Serveur de développement
+pnpm check     # Vérification TypeScript
+pnpm test      # Tests Vitest
+pnpm build     # Build du client et du serveur
+pnpm start     # Démarrage du build de production
+pnpm db:push   # Génération et application des migrations Drizzle
 ```
 
-Les commandes de base de données nécessitent une base configurée et accessible. Vérifie la cible et sauvegarde les données avant d’exécuter des migrations : ne lance pas `pnpm db:push` contre une base de production par défaut.
-
-## Configuration
-
-Le serveur charge les variables d’environnement avec `dotenv/config`. Crée un fichier `.env` local à la racine (il ne doit pas être ajouté à Git) et configure les variables nécessaires à ton environnement :
-
-| Variable | Usage |
-| --- | --- |
-| `DATABASE_URL` | Connexion MySQL/TiDB ; nécessaire aux opérations de base de données et aux commandes Drizzle. |
-| `JWT_SECRET` | Secret de session/JWT ; définis une valeur aléatoire et privée pour chaque environnement. |
-| `VITE_APP_ID` | Identifiant d’application utilisé par l’intégration d’authentification. |
-| `OAUTH_SERVER_URL` | URL du serveur OAuth configuré. |
-| `OWNER_OPEN_ID` | Identifiant du compte propriétaire/admin attendu par l’application. |
-| `PORT` | Port HTTP (3000 par défaut). |
-| `NODE_ENV` | Mode d’exécution (`development` ou `production`). |
-| `BUILT_IN_FORGE_API_URL`, `BUILT_IN_FORGE_API_KEY` | Variables liées aux services Manus/Forge intégrés ; nécessaires uniquement aux fonctions qui les utilisent. La clé doit rester secrète. |
-
-Les intégrations OAuth, Manus/Forge, stockage, paiement, SMS et notifications peuvent nécessiter des paramètres supplémentaires fournis par leurs services respectifs. Consulte le code de l’intégration concernée avant le déploiement ; ne publie jamais de clés, mots de passe, données clients ou fichiers `.env`.
+Les commandes `check`, `test` et `build` sont documentées ici mais ne sont pas garanties comme exécutées ou validées par la publication de ce README. Lance-les dans ton environnement avant un déploiement.
 
 ## Base de données
 
-Le schéma est dans `drizzle/schema.ts` et les migrations SQL dans `drizzle/`. Configure `DATABASE_URL` pour une instance de développement, puis exécute les commandes appropriées. Les migrations peuvent modifier les données ; vérifie-les avant application.
+Le schéma est défini dans `drizzle/schema.ts` et les migrations SQL se trouvent dans `drizzle/`. Configure `DATABASE_URL` vers une instance de développement avant d’exécuter les commandes Drizzle. Ne lance pas les migrations sur une base de production sans revue et sauvegarde préalable.
 
-## Vérifications avant publication ou déploiement
+## Publication et sécurité
 
-```bash
-pnpm check
-pnpm test
-pnpm build
-```
+Avant de rendre le dépôt public ou de déployer l’application :
 
-Ces commandes sont documentées, mais leur présence ne garantit pas qu’elles passent dans tous les environnements. Vérifie aussi les secrets, les données personnelles, les contenus des documents et les droits sur les images et autres ressources avant de rendre le dépôt public.
+- vérifie le code et tout l’historique Git à la recherche de clés, mots de passe, jetons et données personnelles ;
+- vérifie les rapports, archives, captures, images et autres ressources, ainsi que les droits de publication associés ;
+- remplace ou configure les dépendances Manus/Forge et OAuth selon ton hébergement ;
+- branche et teste de vrais fournisseurs avant de présenter des paiements ou notifications comme opérationnels ;
+- lance `pnpm check`, `pnpm test` et `pnpm build`, puis réalise des tests de déploiement et de sécurité.
 
-## Documentation du dépôt
-
-Les fichiers `project_report.md`, `rapport_final_actualise.md`, `rapport_technique_detaille.md` et les autres rapports sont des documents de projet. Leurs descriptions fonctionnelles ne constituent pas une preuve de l’intégration réelle d’un fournisseur de paiement, SMS ou d’un service externe. Vérifie et actualise ces rapports avant de les présenter comme documentation de production.
+Les rapports présents dans le dépôt sont des documents de projet et peuvent décrire des objectifs ou des fonctionnalités de démonstration. Ils ne constituent pas une preuve d’intégration de production. Vérifie également les URLs, numéros de téléphone et affirmations commerciales avant publication.
 
 ## Licence
 
-Le projet déclare la licence MIT dans `package.json`. Voir [`LICENSE`](LICENSE). Vérifie que tu détiens les droits nécessaires sur tout le code et les ressources que tu publies, notamment les éléments provenant de tiers.
+Le dépôt déclare la licence MIT dans `package.json` et le fichier [`LICENSE`](LICENSE). Vérifie que tu détiens les droits nécessaires sur le code et les ressources que tu publies, notamment les éléments provenant de tiers.
