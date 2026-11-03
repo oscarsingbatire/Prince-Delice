@@ -1,4 +1,4 @@
-# Fruits Centrafrique
+# Prince-Delice
 
 Application web de commerce et de gestion de commandes de fruits frais, destinée au marché de Bangui, en République centrafricaine. Le dépôt contient une interface React/TypeScript, une API Node.js/Express avec tRPC et une couche de données MySQL gérée avec Drizzle ORM. Certains documents du projet utilisent aussi le nom « Prince Délice ».
 
